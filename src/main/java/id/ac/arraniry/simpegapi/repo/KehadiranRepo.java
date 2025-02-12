@@ -1,0 +1,22 @@
+package id.ac.arraniry.simpegapi.repo;
+
+import id.ac.arraniry.simpegapi.entity.Kehadiran;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+public interface KehadiranRepo extends MongoRepository<Kehadiran, String> {
+
+    @Query("{ 'pegawai.nip' : ?0, 'waktu' : { $gte : ?1, $lte : ?2 } }")
+    List<Kehadiran> findByNipAndTanggalBetween(String nip, LocalDateTime start, LocalDateTime end, Sort sort);
+
+    @Query("{ 'pegawai.nip' : ?0, 'status' : ?1, 'waktu' : { $gte : ?2, $lte : ?3 } }")
+    Optional<Kehadiran> findByNipAndStatusAndWaktuBetween(String nip, String status, LocalDateTime start, LocalDateTime end);
+
+    List<Kehadiran> findByPegawaiNipAndTanggal(String nip, String tanggal);
+
+}
