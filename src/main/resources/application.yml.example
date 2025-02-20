@@ -24,3 +24,7 @@ env:
     cdn-username: ""
     cdn-password: ""
     cdn-usul-izin-folder: ""
+    ttd-url: ""
+    ttd-kota: ""
+    ttd-nama: ""
+    ttd-nip: ""

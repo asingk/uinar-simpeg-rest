@@ -10,4 +10,5 @@ public interface IzinService {
     List<Izin> findByNipAndTahunAndBulan(String idPegawai, Integer tahun, Integer bulan);
     Optional<Izin> findByNipAndTanggal(String nip, LocalDate tanggal);
     void deleteById(String id);
+    String create(Izin izin);
 }

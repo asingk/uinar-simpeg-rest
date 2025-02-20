@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Set;
+import java.util.List;
 
 @Service
 public class UsulIzinServiceImpl implements UsulIzinService {
@@ -20,7 +20,7 @@ public class UsulIzinServiceImpl implements UsulIzinService {
     }
 
     @Override
-    public Page<UsulIzin> findByNipAndStatusIn(String nip, Set<Integer> status, Pageable pageable) {
+    public Page<UsulIzin> findByNipAndStatusIn(String nip, List<Integer> status, Pageable pageable) {
         return usulIzinRepo.findByNipAndStatusIn(nip, status, pageable);
     }
 
@@ -32,5 +32,10 @@ public class UsulIzinServiceImpl implements UsulIzinService {
     @Override
     public UsulIzin findById(String id) {
         return usulIzinRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "usulan izin tidak ditemukan!"));
+    }
+
+    @Override
+    public Page<UsulIzin> findByStatusIn(List<Integer> status, Pageable pageable) {
+        return usulIzinRepo.findByStatusIn(status, pageable);
     }
 }

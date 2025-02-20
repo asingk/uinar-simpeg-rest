@@ -1,7 +1,7 @@
 package id.ac.arraniry.simpegapi.entity;
 
 import id.ac.arraniry.simpegapi.dto.KehadiranVO;
-import id.ac.arraniry.simpegapi.helper.GlobalConstants;
+import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;

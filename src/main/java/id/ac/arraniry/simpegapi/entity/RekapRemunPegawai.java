@@ -24,4 +24,16 @@ public class RekapRemunPegawai {
     private Double persenPotongan;
     private String unitRemun;
     private LocalDateTime createdDate;
+    private String golongan;
+    private String namaJabatan;
+    private String grade;
+    private Integer remunGrade;
+    private Integer implementasiRemunPersen;
+    private Integer implementasiRemun;
+    private Integer remunP1;
+    private Integer rupiahPotongan;
+    private Integer setelahPotongan;
+    private Integer persenPajak;
+    private Integer rupiahPajak;
+    private Integer netto;
 }

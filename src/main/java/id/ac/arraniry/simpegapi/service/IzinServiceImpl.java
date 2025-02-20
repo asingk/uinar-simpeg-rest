@@ -2,8 +2,11 @@ package id.ac.arraniry.simpegapi.service;
 
 import id.ac.arraniry.simpegapi.entity.Izin;
 import id.ac.arraniry.simpegapi.repo.IzinRepo;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -35,6 +38,15 @@ public class IzinServiceImpl implements IzinService {
     @Override
     public void deleteById(String id) {
         izinRepo.deleteById(id);
+    }
+
+    @Override
+    public String create(Izin izin) {
+        try {
+            return izinRepo.save(izin).getId();
+        } catch (DuplicateKeyException dke) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "rekaman sudah ada!");
+        }
     }
 
 }

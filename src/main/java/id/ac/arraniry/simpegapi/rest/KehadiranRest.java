@@ -2,8 +2,8 @@ package id.ac.arraniry.simpegapi.rest;
 
 import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.*;
-import id.ac.arraniry.simpegapi.helper.GlobalConstants;
-import id.ac.arraniry.simpegapi.helper.KehadiranUtils;
+import id.ac.arraniry.simpegapi.utils.GlobalConstants;
+import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
 import id.ac.arraniry.simpegapi.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -110,7 +110,6 @@ public class KehadiranRest {
             HttpServletRequest request, @RequestHeader("User-Agent") String userAgent, @Valid @RequestBody KehadiranCreateRequest createRequest) {
 //		log.debug("--- save start ---");
 //		log.debug("nip: " + nip);
-        String trimmedNip = createRequest.getIdPegawai();
 
         //TODO dev purpose only
 //		String nip = "198703222019031010";
@@ -124,18 +123,18 @@ public class KehadiranRest {
         if (izinOptional.isPresent()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Hari ini Anda " + izinOptional.get().getIzinCategoryDesc());
         }
-        PegawaiSimpegVO pegawaiProfilVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(trimmedNip);
+        PegawaiSimpegVO pegawaiProfilVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createRequest.getIdPegawai());
         Kehadiran kehadiran = paramToSave(now, createRequest.getLongitude(), createRequest.getLatitude(), userAgent);
         if (null == createRequest.getLongitude() && null == createRequest.getLatitude() && isHarusDiKampus(pegawaiProfilVO)) {
             validasiIpPrivate(request.getRemoteAddr());
         }
         kehadiran.setPegawai(new Pegawai(pegawaiProfilVO.getId(), pegawaiProfilVO.getNama()));
-        var existingOpt = kehadiranService.findByNipAndStatusAndTanggal(trimmedNip, kehadiran.getStatus(), now.toLocalDate());
-        if (existingOpt.isPresent()) {
+        KehadiranVO existingVO = kehadiranService.findByNipAndStatusAndTanggal(createRequest.getIdPegawai(), kehadiran.getStatus(), now.toLocalDate());
+        if (null != existingVO.getId()) {
             if(kehadiran.getStatus().equals(GlobalConstants.STATUS_DATANG)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Anda sudah datang!");
             }
-            kehadiran.setId(existingOpt.get().getId());
+            kehadiran.setId(existingVO.getId());
         }
 
 //		log.debug("--- save end ---");
@@ -205,6 +204,65 @@ public class KehadiranRest {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Harus menggunakan jaringan kampus!");
         }
         logger.trace("{} sukses menggukanan jaringan kampus", ip);
+    }
+
+    @Operation(summary = "Menambahkan kehadiran")
+    @PostMapping("/tambah")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SaveResponse addKehadiran(@Valid @RequestBody KehadiranAddRequest request) {
+        LocalDate tglHariIni = LocalDate.now();
+        if(request.getTanggal().equals(tglHariIni) || request.getTanggal().isAfter(tglHariIni)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "hanya boleh menambahkan hari yang sudah lalu");
+        }
+        if(kehadiranUtils.isLibur(request.getTanggal())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ini hari libur!");
+        Optional<Izin> izinOptional = izinService.findByNipAndTanggal(request.getIdPegawai(), request.getTanggal());
+        if (izinOptional.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Hari ini pegawai ini " + izinOptional.get().getIzinCategoryDesc());
+        }
+        PegawaiSimpegVO pegawaiProfilVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getIdPegawai());
+        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy());
+        LocalTime time = switch (request.getStatus()) {
+            case GlobalConstants.STATUS_DATANG -> LocalTime.of(7, 15, 1, 123000000);
+            case GlobalConstants.STATUS_PULANG -> LocalTime.of(17, 1, 1, 123000000);
+            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
+        };
+        KehadiranVO kehadiranVO = new KehadiranVO();
+        kehadiranVO.setIdPegawai(pegawaiProfilVO.getId());
+        kehadiranVO.setNamaPegawai(pegawaiProfilVO.getNama());
+        kehadiranVO.setStatus(request.getStatus());
+        kehadiranVO.setWaktu(LocalDateTime.of(request.getTanggal(), time));
+        kehadiranVO.setTanggal(request.getTanggal().toString());
+        kehadiranVO.setIsAdded(true);
+        kehadiranVO.setAddedDate(LocalDateTime.now());
+        kehadiranVO.setAddedByNip(request.getCreatedBy());
+        kehadiranVO.setAddedByNama(pegawaiSimpegVO.getNama());
+        return kehadiranService.save(kehadiranVO);
+    }
+
+    @Operation(summary = "menghapus kehadiran")
+    @PostMapping("/safe-delete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@Valid @RequestBody KehadiranUpdateRequest request) {
+        kehadiranUtils.safeDeleteIzin(request.getTanggal(), request.getIdPegawai(), kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getUpdatedBy()));
+    }
+
+    @Operation(summary = "Membatalkan kehadiran yang sudah di hapus")
+    @PostMapping("/undelete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void undelete(@Valid @RequestBody KehadiranUpdateRequest request) {
+        kehadiranUtils.undeleteKehadiran(request.getTanggal(), request.getIdPegawai());
+    }
+
+    @Operation(summary = "Membatalkan kehadiran yang sudah ditambahkan(hard delete)")
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void hardDelete(@PathVariable String id) {
+        KehadiranVO hadir = kehadiranService.findById(id);
+        if(null != hadir.getIsAdded() && hadir.getIsAdded()) {
+            kehadiranService.delete(hadir);
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Kehadiran ini tidak bisa di hard delete!");
+        }
     }
 
 }

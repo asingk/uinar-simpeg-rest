@@ -1,4 +1,4 @@
-package id.ac.arraniry.simpegapi.helper;
+package id.ac.arraniry.simpegapi.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcraft.jsch.*;
 import id.ac.arraniry.simpegapi.dto.KehadiranVO;
 import id.ac.arraniry.simpegapi.dto.PegawaiSimpegVO;
+import id.ac.arraniry.simpegapi.dto.StatusPegawaiSimpegVO;
 import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.service.*;
 import org.slf4j.Logger;
@@ -160,6 +161,65 @@ public class KehadiranUtils {
         for(KehadiranVO row: hadir) {
             row.setIsDeleted(false);
             kehadiranService.save(row);
+        }
+    }
+
+    public String namaBulan(int bulan) {
+        return switch (bulan) {
+            case 1 -> "Januari";
+            case 2 -> "Februari";
+            case 3 -> "Maret";
+            case 4 -> "April";
+            case 5 -> "Mei";
+            case 6 -> "Juni";
+            case 7 -> "Juli";
+            case 8 -> "Agustus";
+            case 9 -> "September";
+            case 10 -> "Oktober";
+            case 11 -> "November";
+            case 12 -> "Desember";
+            default -> "salah bulan";
+        };
+    }
+
+    public void safeDeleteIzin(LocalDate tanggal, String nip, PegawaiSimpegVO pegawaiSimpegVO) {
+        List<KehadiranVO> hadir = kehadiranService.findByNipAndTanggal(nip, tanggal);
+        for(KehadiranVO row: hadir) {
+            row.setIsDeleted(true);
+            row.setDeletedByNip(pegawaiSimpegVO.getId());
+            row.setDeletedByNama(pegawaiSimpegVO.getNama());
+            row.setDeletedDate(LocalDateTime.now());
+            kehadiranService.save(row);
+        }
+    }
+
+    public StatusPegawaiSimpegVO getNamaStatusPegawaiByIdFromSimpegGraphql(Integer id) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("apikey", environment.getProperty("env.data.secret-key"));
+        String query = "{\"query\":\"query StatusPegawai($id: Int!) {" +
+                "  statusPegawai(id: $id) {" +
+                "    id" +
+                "    nama" +
+                "  }" +
+                "}\",\"variables\":{\"id\":" + id + "},\"operationName\":\"StatusPegawai\"}";
+        ResponseEntity<String> response = restTemplate.postForEntity(Objects.requireNonNull(environment.getProperty("env.data.simpeg-graphql-url")), new HttpEntity<>(query, headers), String.class);
+        if(200 != response.getStatusCode().value()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak diizinkan!");
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+//            log.debug(response.getBody());
+            JsonNode actualObj = mapper.readTree(response.getBody());
+            JsonNode statusPegawai = actualObj.get("data").get("statusPegawai");
+            if(statusPegawai.isNull())
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Status pegawai tidak ditemukan!");
+            //            log.debug(pegawaiProfilVO.toString());
+            return new ObjectMapper().readValue(statusPegawai.toString(), StatusPegawaiSimpegVO.class);
+        } catch (JsonProcessingException jpe) {
+            log.error(jpe.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak diizinkan!");
         }
     }
 

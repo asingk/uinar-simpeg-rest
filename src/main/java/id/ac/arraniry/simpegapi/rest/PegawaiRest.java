@@ -1,23 +1,16 @@
 package id.ac.arraniry.simpegapi.rest;
 
-import id.ac.arraniry.simpegapi.assembler.UsulIzinModelAssembler;
 import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.*;
-import id.ac.arraniry.simpegapi.helper.GlobalConstants;
-import id.ac.arraniry.simpegapi.helper.KehadiranUtils;
+import id.ac.arraniry.simpegapi.utils.GlobalConstants;
+import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
 import id.ac.arraniry.simpegapi.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.apache.tika.Tika;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -33,34 +26,32 @@ import java.util.*;
 @RequestMapping("/pegawai")
 public class PegawaiRest {
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String FILETYPE_PDF = ".pdf";
 
     private final LaporanService laporanService;
     private final JabatanBulananService jabatanBulananService;
     private final UsulIzinService usulIzinService;
-    private final PagedResourcesAssembler<UsulIzin> pagedResourcesAssembler;
-    private final UsulIzinModelAssembler usulIzinModelAssembler;
     private final RekapUMPegawaiService rekapUMPegawaiService;
     private final RekapRemunPegawaiService rekapRemunPegawaiService;
     private final KehadiranUtils kehadiranUtils;
     private final KategoriIzinService kategoriIzinService;
     private final Environment environment;
+    private final PemutihanService pemutihanService;
+    private final KehadiranService kehadiranService;
 
     public PegawaiRest(LaporanService laporanService, JabatanBulananService jabatanBulananService, UsulIzinService usulIzinService,
-                       PagedResourcesAssembler<UsulIzin> pagedResourcesAssembler, UsulIzinModelAssembler usulIzinModelAssembler,
                        RekapUMPegawaiService rekapUMPegawaiService, RekapRemunPegawaiService rekapRemunPegawaiService, KehadiranUtils kehadiranUtils,
-                       KategoriIzinService kategoriIzinService, Environment environment) {
+                       KategoriIzinService kategoriIzinService, Environment environment, PemutihanService pemutihanService, KehadiranService kehadiranService) {
         this.laporanService = laporanService;
         this.jabatanBulananService = jabatanBulananService;
         this.usulIzinService = usulIzinService;
-        this.pagedResourcesAssembler = pagedResourcesAssembler;
-        this.usulIzinModelAssembler = usulIzinModelAssembler;
         this.rekapUMPegawaiService = rekapUMPegawaiService;
         this.rekapRemunPegawaiService = rekapRemunPegawaiService;
         this.kehadiranUtils = kehadiranUtils;
         this.kategoriIzinService = kategoriIzinService;
         this.environment = environment;
+        this.pemutihanService = pemutihanService;
+        this.kehadiranService = kehadiranService;
     }
 
     @Operation(summary = "Melihat riwayat kehadiran bulanan pegawai")
@@ -80,25 +71,6 @@ public class PegawaiRest {
             result = jabatanBulananService.findByNipAndTahun(idPegawai, tahun, Sort.by(Sort.Direction.DESC, "bulan"));
         }
         return result;
-    }
-
-    @Operation(summary = "Mendapatkan daftar usul izin pegawai")
-    @GetMapping("/{idPegawai}/usul-izin")
-    public PagedModel<UsulIzinModel> getUsulIzinByNip(@PathVariable String idPegawai, @RequestParam(name = "status", defaultValue = "0,1,2,3") String status,
-                                                      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size) {
-        if(size > 100) size = 100;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startDate"));
-        String[] statusSplitted = status.split(",");
-        Set<Integer> statusSet = new HashSet<>();
-        for(String i: statusSplitted) {
-            try {
-                statusSet.add(Integer.parseInt(i));
-            } catch (NumberFormatException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "status usulan izin salah!");
-            }
-        }
-        Page<UsulIzin> usulIzinPage = usulIzinService.findByNipAndStatusIn(idPegawai, statusSet, pageable);
-        return pagedResourcesAssembler.toModel(usulIzinPage, usulIzinModelAssembler);
     }
 
     @Operation(summary = "Menambah usulan izin pegawai")
@@ -152,6 +124,33 @@ public class PegawaiRest {
             result = rekapRemunPegawaiService.findByNipAndTahun(idPegawai, tahun, Sort.by(Sort.Direction.DESC, "bulan"));
         }
         return result;
+    }
+
+    @Operation(summary = "Melihat status kehadiran pengguna saat ini")
+    @GetMapping("/{idPegawai}/kehadiran/search")
+    public KehadiranResponse cekStatusKehadiran(
+            @PathVariable String idPegawai, @RequestParam("status") String status,
+            @RequestParam("tanggal") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate tanggal) {
+
+//		String nip = "198703222019031010";
+//		tanggal = LocalDate.of(2023, 9, 12);
+//		status = "PULANG";
+        KehadiranVO hadir = new KehadiranVO();
+        Pemutihan pemutihan = pemutihanService.findByTanggalAndStatus(tanggal, status);
+        if(null != pemutihan) {
+            hadir.setId(pemutihan.getId());
+            hadir.setStatus(GlobalConstants.STATUS_PEMUTIHAN);
+        } else {
+            hadir = kehadiranService.findByNipAndStatusAndTanggal(idPegawai, status, tanggal);
+        }
+        return new KehadiranResponse(hadir);
+    }
+
+    @Operation(summary = "Menambah riwayat jabatan pegawai bulanan")
+    @PostMapping("/{idPegawai}/riwayat-profil")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CreateResponse createProfilRiwayat(@PathVariable String idPegawai, @Valid @RequestBody JabBulCreateRequest request) {
+        return jabatanBulananService.create(idPegawai, request);
     }
 
 }

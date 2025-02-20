@@ -30,4 +30,12 @@ public class PemutihanServiceImpl implements PemutihanService {
         LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
         return pemutihanRepo.findByTanggalBetween(startDate, endDate, Sort.by(Sort.Direction.ASC, "tanggal"));
     }
+
+    @Override
+    public List<Pemutihan> findByBulanAndTahunAndStatus(Integer bulan, Integer tahun, String status) {
+        LocalDate startDate = LocalDate.of(tahun, bulan, 1);
+        YearMonth yearMonth = YearMonth.of(tahun, bulan);
+        LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
+        return pemutihanRepo.findByTanggalBetweenAndStatus(startDate, endDate, status, Sort.by(Sort.Direction.ASC, "tanggal"));
+    }
 }

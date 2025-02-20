@@ -14,8 +14,4 @@ public class HariLibur {
 	private String id;
 	private LocalDate tanggal;
 
-	public HariLibur(LocalDate tanggal) {
-		this.tanggal = tanggal;
-	}
-
 }
