@@ -9,4 +9,6 @@ public interface HariLiburService {
     List<HariLibur> findAll();
     List<LocalDate> hariLiburBulanan(int tahun, int bulan);
     List<HariLibur> findByTahun(Integer tahun);
+    String create(LocalDate tanggal);
+    void delete(String id);
 }

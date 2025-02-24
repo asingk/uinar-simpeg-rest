@@ -32,4 +32,16 @@ public class JamKerjaServiceImpl implements JamKerjaService {
     public List<JamKerja> findByIsRamadhan(Boolean isRamadhan) {
         return jamKerjaRepo.findByIsRamadhan(isRamadhan, Sort.by(Sort.Direction.ASC, "hari"));
     }
+
+    @Override
+    public JamKerja findById(String id) {
+        return jamKerjaRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "jam kerja tidak ditemukan!"));
+    }
+
+    @Override
+    public void update(JamKerja jamKerja) {
+        jamKerjaRepo.save(jamKerja);
+    }
+
 }

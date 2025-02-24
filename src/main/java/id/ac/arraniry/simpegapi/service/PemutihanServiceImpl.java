@@ -1,9 +1,13 @@
 package id.ac.arraniry.simpegapi.service;
 
+import id.ac.arraniry.simpegapi.dto.PemutihanCreateRequest;
 import id.ac.arraniry.simpegapi.entity.Pemutihan;
 import id.ac.arraniry.simpegapi.repo.PemutihanRepository;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -38,4 +42,19 @@ public class PemutihanServiceImpl implements PemutihanService {
         LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
         return pemutihanRepo.findByTanggalBetweenAndStatus(startDate, endDate, status, Sort.by(Sort.Direction.ASC, "tanggal"));
     }
+
+    @Override
+    public String create(PemutihanCreateRequest request) {
+        try {
+            return pemutihanRepo.save(new Pemutihan(request)).getId();
+        } catch (DuplicateKeyException dke) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "tanggal sudah ada!");
+        }
+    }
+
+    @Override
+    public void delete(String id) {
+        pemutihanRepo.deleteById(id);
+    }
+
 }

@@ -8,4 +8,6 @@ public interface JamKerjaService {
     JamKerja findByHariAndIsRamadhan(Integer hari, Boolean isRamadhan);
     List<JamKerja> findAll();
     List<JamKerja> findByIsRamadhan(Boolean isRamadhan);
+    JamKerja findById(String id);
+    void update(JamKerja jamKerja);
 }

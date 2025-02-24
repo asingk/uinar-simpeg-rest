@@ -3,8 +3,11 @@ package id.ac.arraniry.simpegapi.service;
 import id.ac.arraniry.simpegapi.entity.HariLibur;
 import id.ac.arraniry.simpegapi.entity.HariLiburTapiKerja;
 import id.ac.arraniry.simpegapi.repo.HariLiburRepo;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -72,6 +75,23 @@ public class HariLiburServiceImpl implements HariLiburService {
         LocalDate startDate = LocalDate.of(tahun, 1, 1);
         LocalDate endDate = LocalDate.of(tahun, 12, 31);
         return hariLiburRepo.findByTanggalBetween(startDate, endDate, Sort.by(Sort.Direction.ASC, "tanggal"));
+    }
+
+    @Override
+    public String create(LocalDate tanggal) {
+        if(tanggal.getDayOfWeek().getValue() > 5)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Hanya boleh menambah hari libur di hari senin-jum'at");
+        try {
+            return hariLiburRepo.save(new HariLibur(tanggal)).getId();
+        } catch (DuplicateKeyException mwe) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "tanggal sudah ada!");
+        }
+
+    }
+
+    @Override
+    public void delete(String id) {
+        hariLiburRepo.deleteById(id);
     }
 
 }
