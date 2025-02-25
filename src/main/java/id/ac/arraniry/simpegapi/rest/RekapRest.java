@@ -146,7 +146,7 @@ public class RekapRest {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void generateRekap(@Valid @RequestBody UangMakanCreateRequest request) {
         Rekap rekap = new Rekap();
-        Optional<Rekap> rekapOpt = rekapService.findByJenisRekapAndTahunAndBulanAndUnitGajiIdAndUnitRemunId(request.getJenisRekap(), request.getTahun(), request.getBulan(), request.getUnitGaji(), null);
+        Optional<Rekap> rekapOpt = rekapService.findByJenisRekapAndTahunAndBulanAndUnitGajiIdAndUnitRemunId(request.getJenisRekap(), request.getTahun(), request.getBulan(), request.getUnitGaji(), request.getUnitRemun());
         PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy());
         if (rekapOpt.isPresent()) {
             rekap = rekapOpt.get();
