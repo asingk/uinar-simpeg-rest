@@ -12,7 +12,7 @@ server:
 
 logging:
   level:
-    '[id.ac.arraniry.simpegapi]': trace
+    id.ac.arraniry.simpegapi: trace
   file:
     path: /var/tmp
 env:
