@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'id.ac.ar-raniry'
-version = '6.2.0.RELEASE'
+version = '6.3.0.RELEASE'
 
 java {
     toolchain {
@@ -17,6 +17,10 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+}
+
+configurations.implementation {
+    exclude group: 'commons-logging', module: 'commons-logging'
 }
 
 repositories {

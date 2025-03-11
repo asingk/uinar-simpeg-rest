@@ -14,10 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.chrono.HijrahDate;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -193,6 +190,7 @@ public class KehadiranRest {
     }
 
     private boolean isHarusDiKampus(PegawaiSimpegVO pegawaiProfilVO) {
+        if (LocalDate.now().getDayOfWeek() == DayOfWeek.FRIDAY) return false;
         return jenisJabatanService.findById(pegawaiProfilVO.getJenisJabatan()).getIsHarusDiKampus();
     }
 
