@@ -38,9 +38,11 @@ public class KehadiranRest {
     private final KehadiranService kehadiranService;
     private final JenisJabatanService jenisJabatanService;
     private final WfaByTanggalService wfaByTanggalService;
+    private final WfaByHariService wfaByHariService;
 
     public KehadiranRest(HijriahService hijriahService, JamKerjaService jamKerjaService, KehadiranUtils kehadiranUtils, PemutihanService pemutihanService,
-                         IzinService izinService, KehadiranService kehadiranService, JenisJabatanService jenisJabatanService, WfaByTanggalService wfaByTanggalService) {
+                         IzinService izinService, KehadiranService kehadiranService, JenisJabatanService jenisJabatanService,
+                         WfaByTanggalService wfaByTanggalService, WfaByHariService wfaByHariService) {
         this.hijriahService = hijriahService;
         this.jamKerjaService = jamKerjaService;
         this.kehadiranUtils = kehadiranUtils;
@@ -49,6 +51,7 @@ public class KehadiranRest {
         this.kehadiranService = kehadiranService;
         this.jenisJabatanService = jenisJabatanService;
         this.wfaByTanggalService = wfaByTanggalService;
+        this.wfaByHariService = wfaByHariService;
     }
 
     @Operation(summary = "mendapatkan status waktu di server saat ini")
@@ -192,7 +195,10 @@ public class KehadiranRest {
     }
 
     private boolean isHarusDiKampus(PegawaiSimpegVO pegawaiProfilVO) {
-        if (LocalDate.now().getDayOfWeek() == DayOfWeek.FRIDAY || wfaByTanggalService.findByTanggal(LocalDate.now()).isPresent()) return false;
+        var now = LocalDate.now();
+        var opt = wfaByHariService.findByHari(now.getDayOfWeek().getValue());
+        if (opt.isPresent() && opt.get().getWfa()) return false;
+        if (wfaByTanggalService.findByTanggal(now).isPresent()) return false;
         return jenisJabatanService.findById(pegawaiProfilVO.getJenisJabatan()).getIsHarusDiKampus();
     }
 
