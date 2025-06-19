@@ -23,4 +23,6 @@ public class UsulIzinModel extends RepresentationModel<UsulIzinModel> {
     private String ket;
     private LocalDateTime updatedDate;
     private String updatedBy;
+    private LocalDateTime createdDate;
+    private String createdBy;
 }

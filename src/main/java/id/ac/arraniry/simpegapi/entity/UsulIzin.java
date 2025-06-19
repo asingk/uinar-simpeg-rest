@@ -19,4 +19,6 @@ public class UsulIzin {
     private String ket;
     private LocalDateTime updatedDate;
     private Pegawai updatedBy;
+    private LocalDateTime createdDate;
+    private String createdBy;
 }

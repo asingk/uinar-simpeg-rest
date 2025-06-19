@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -97,6 +98,8 @@ public class PegawaiRest {
         usulIzin.setEndDate(endDate);
         usulIzin.setStatus(GlobalConstants.STATUS_USUL_IZIN_DIPROSES);
         usulIzin.setFileName(fileName);
+        usulIzin.setCreatedBy(idPegawai);
+        usulIzin.setCreatedDate(LocalDateTime.now());
         return new CreateResponse(usulIzinService.save(usulIzin));
     }
 
