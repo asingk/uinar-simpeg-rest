@@ -81,24 +81,25 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
                     KehadiranVO kehadiran = kehadiranVOList.get(j);
                     if(kehadiran.getWaktu().toLocalTime().isBefore(LocalTime.of(12, 0)) &&
                             izinService.findByNipAndTanggal(kehadiran.getIdPegawai(), value.getTanggal()).isEmpty()) {
-//						if(kehadiran.getIdPegawai().equals("197404172005012002") && kehadiran.getTanggal().equals("2024-04-23")) {
-//							System.out.println(kehadiran.getIdPegawai() + " " + kehadiran.getTanggal());
-//						}
+						if(kehadiran.getIdPegawai().equals("196601131994021002") && kehadiran.getTanggal().equals("2025-07-31")) {
+							System.out.println(kehadiran.getIdPegawai() + " " + kehadiran.getTanggal());
+						}
                         if ((j == 0 || !kehadiran.getIdPegawai().equals(kehadiranVOList.get(j-1).getIdPegawai()))
-                                && value.getTanggal().isBefore(kehadiran.getWaktu().toLocalDate())) {    // record pertama list & record pertama pegawai
+                                && value.getTanggal().isBefore(kehadiran.getWaktu().toLocalDate())) {    // record pertama list atau record pertama pegawai
                             KehadiranVO kehadiranVO = new KehadiranVO();
                             kehadiranVO.setIdPegawai(kehadiran.getIdPegawai());
                             kehadiranVO.setNamaPegawai(kehadiran.getNamaPegawai());
                             kehadiranVO.setTanggal(value.getTanggal().toString());
                             addPutihVO.add(kehadiranVO);
                         } else if ((j == kehadiranVOList.size()-1 || !kehadiran.getIdPegawai().equals(kehadiranVOList.get(j+1).getIdPegawai()))
-                                && value.getTanggal().isAfter(kehadiran.getWaktu().toLocalDate())) {	// record terakhir list & record terakhir pegawai
+                                && value.getTanggal().isAfter(kehadiran.getWaktu().toLocalDate())) {	// record terakhir list atau record terakhir pegawai
                             KehadiranVO kehadiranVO = new KehadiranVO();
                             kehadiranVO.setIdPegawai(kehadiran.getIdPegawai());
                             kehadiranVO.setNamaPegawai(kehadiran.getNamaPegawai());
                             kehadiranVO.setTanggal(value.getTanggal().toString());
                             addPutihVO.add(kehadiranVO);
-                        } else if (j > 0 && j < kehadiranVOList.size()-1 && kehadiranVOList.get(j+1).getIdPegawai().equals(kehadiran.getIdPegawai())
+                        } else if (j < kehadiranVOList.size()-1
+                                && kehadiranVOList.get(j+1).getIdPegawai().equals(kehadiran.getIdPegawai())
                                 && value.getTanggal().isAfter(kehadiran.getWaktu().toLocalDate())
                                 && value.getTanggal().isBefore(kehadiranVOList.get(j+1).getWaktu().toLocalDate())) {	// di antara tanggal, pegawai yg sama
                             KehadiranVO kehadiranVO = new KehadiranVO();
