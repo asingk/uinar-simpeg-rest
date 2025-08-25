@@ -39,10 +39,12 @@ public class PegawaiRest {
     private final Environment environment;
     private final PemutihanService pemutihanService;
     private final KehadiranService kehadiranService;
+    private final GajiService gajiService;
 
     public PegawaiRest(LaporanService laporanService, JabatanBulananService jabatanBulananService, UsulIzinService usulIzinService,
                        RekapUMPegawaiService rekapUMPegawaiService, RekapRemunPegawaiService rekapRemunPegawaiService, KehadiranUtils kehadiranUtils,
-                       KategoriIzinService kategoriIzinService, Environment environment, PemutihanService pemutihanService, KehadiranService kehadiranService) {
+                       KategoriIzinService kategoriIzinService, Environment environment, PemutihanService pemutihanService, KehadiranService kehadiranService,
+                       GajiService gajiService) {
         this.laporanService = laporanService;
         this.jabatanBulananService = jabatanBulananService;
         this.usulIzinService = usulIzinService;
@@ -53,6 +55,7 @@ public class PegawaiRest {
         this.environment = environment;
         this.pemutihanService = pemutihanService;
         this.kehadiranService = kehadiranService;
+        this.gajiService = gajiService;
     }
 
     @Operation(summary = "Melihat riwayat kehadiran bulanan pegawai")
@@ -154,6 +157,11 @@ public class PegawaiRest {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateResponse createProfilRiwayat(@PathVariable String idPegawai, @Valid @RequestBody JabBulCreateRequest request) {
         return jabatanBulananService.create(idPegawai, request);
+    }
+
+    @GetMapping("/{idPegawai}/gaji")
+    public List<Gaji> getByNip(@PathVariable String idPegawai, @RequestParam Integer tahun) {
+        return gajiService.findByNipAndTahun(idPegawai, tahun);
     }
 
 }

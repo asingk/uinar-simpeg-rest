@@ -12,6 +12,11 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -21,12 +26,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
@@ -52,12 +59,13 @@ public class RekapRest {
     private final LaporanService laporanService;
     private final RekapBaruUMPegawaiService rekapBaruUMPegawaiService;
     private final RekapRemunGradeService rekapRemunGradeService;
+    private final GajiService gajiService;
     private final Environment environment;
 
     public RekapRest(RekapUMPegawaiService rekapUMPegawaiService, JabatanBulananService jabatanBulananService,
                      RekapRemunPegawaiService rekapRemunPegawaiService, RekapService rekapService, KehadiranUtils kehadiranUtils,
                      LaporanService laporanService, RekapBaruUMPegawaiService rekapBaruUMPegawaiService, RekapRemunGradeService rekapRemunGradeService,
-                     Environment environment) {
+                     GajiService gajiService, Environment environment) {
         this.rekapUMPegawaiService = rekapUMPegawaiService;
         this.jabatanBulananService = jabatanBulananService;
         this.rekapRemunPegawaiService = rekapRemunPegawaiService;
@@ -66,6 +74,7 @@ public class RekapRest {
         this.laporanService = laporanService;
         this.rekapBaruUMPegawaiService = rekapBaruUMPegawaiService;
         this.rekapRemunGradeService = rekapRemunGradeService;
+        this.gajiService = gajiService;
         this.environment = environment;
     }
 
@@ -128,6 +137,15 @@ public class RekapRest {
             result.setCreatedDate(rekapRemunPegawai.getCreatedDate());
         }
         return result;
+    }
+
+    @GetMapping("/gaji")
+    public List<Rekap> gaji(@RequestParam Integer tahun, @RequestParam(required = false) String unitGajiId) {
+        if (unitGajiId == null) {
+            return rekapService.findByJenisRekapAndTahun("gaji", tahun);
+        } else {
+            return rekapService.findByJenisRekapAndTahunAndUnitGajiId("gaji", tahun, unitGajiId);
+        }
     }
 
     @GetMapping("/uang-makan")
@@ -356,6 +374,170 @@ public class RekapRest {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    @GetMapping("/gaji-pegawai/{id}")
+    public Gaji getDetailGajiPegawai(@PathVariable String id) {
+        return gajiService.findById(id);
+    }
+
+    @Operation(summary = "Meng-upload file gaji")
+    @PostMapping("/gaji/upload")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void uploadFile(@RequestParam MultipartFile file, @RequestParam String createdBy) throws IOException {
+        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
+        List<Gaji> gajiList = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        // Baca file Excel langsung dari InputStream
+        try (InputStream inputStream = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(0); // Ambil sheet pertama
+
+            List<String> targetColumns = Arrays.asList("kdanak", "bulan", "tahun", "nip", "nmpeg", "gjpokok", "tjistri", "tjanak", "tjupns", "tjstruk", "tjfungs",
+                    "pembul", "tjberas", "tjpph", "potpfk10", "potpph", "bersih", "bpjs");
+            Map<String, Integer> columnIndices = new HashMap<>();
+
+            // Cari index untuk setiap kolom target
+            Row headerRow = sheet.getRow(0);
+            for (Cell cell : headerRow) {
+                String columnName = cell.getStringCellValue();
+                if (targetColumns.contains(columnName)) {
+                    columnIndices.put(columnName, cell.getColumnIndex());
+                }
+            }
+            // Ambil data dari kolom-kolom target
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row != null) {
+                    Gaji gaji = new Gaji();
+                    gaji.setCreatedBy(createdBy);
+                    gaji.setCreatedDate(now);
+                    for (String columnName : targetColumns) {
+                        int colIndex = columnIndices.get(columnName);
+                        Cell cell = row.getCell(colIndex);
+                        String cellStringValue = getCellValueAsString(cell);
+                        switch (columnName) {
+                            case  "kdanak":
+                                gaji.setKodeAnakSatker(cellStringValue);
+                                break;
+                            case "bulan":
+                                gaji.setBulan(Integer.valueOf(cellStringValue));
+                                break;
+                            case "tahun":
+                                gaji.setTahun(Integer.valueOf(cellStringValue));
+                                break;
+                            case "nip":
+                                gaji.setNip(cellStringValue);
+                                break;
+                            case "nmpeg":
+                                gaji.setNama(cellStringValue);
+                                break;
+                            case "gjpokok":
+                                int gajiPokok = (int) Double.parseDouble(cellStringValue);
+                                gaji.setGajiPokok(gajiPokok);
+                                break;
+                            case "tjistri":
+                                int tjIstri = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganIstri(tjIstri);
+                                break;
+                            case "tjanak":
+                                int tjAnak = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganAnak(tjAnak);
+                                break;
+                            case "tjupns":
+                                int tjUmum = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganUmum(tjUmum);
+                                break;
+                            case "tjstruk":
+                                int tjStruk = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganStruktural(tjStruk);
+                                break;
+                            case "tjfungs":
+                                int tjFungs = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganFungsional(tjFungs);
+                                break;
+                            case "pembul":
+                                int pembul = (int) Double.parseDouble(cellStringValue);
+                                gaji.setPembulatan(pembul);
+                                break;
+                            case "tjberas":
+                                int tjBeras = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganBeras(tjBeras);
+                                break;
+                            case "tjpph":
+                                int tjPph = (int) Double.parseDouble(cellStringValue);
+                                gaji.setTunjanganPajak(tjPph);
+                                break;
+                            case "potpfk10":
+                                int iwp = (int) Double.parseDouble(cellStringValue);
+                                gaji.setIwp(iwp);
+                                break;
+                            case "potpph":
+                                int pph = (int) Double.parseDouble(cellStringValue);
+                                gaji.setPph(pph);
+                                break;
+                            case "bersih":
+                                int bersih = (int) Double.parseDouble(cellStringValue);
+                                gaji.setNetto(bersih);
+                                break;
+                            case "bpjs":
+                                int bpjs = (int) Double.parseDouble(cellStringValue);
+                                gaji.setBpjs(bpjs);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    gajiList.add(gaji);
+                }
+            }
+            Rekap rekap = new Rekap();
+            Gaji gajiFirst = gajiList.get(0);
+            String unitGaji = switch (gajiFirst.getKodeAnakSatker()) {
+                case "01" -> "BAUPK";
+                case "02" -> "FSH";
+                case "03" -> "FTK";
+                case "04" -> "FUF";
+                case "05" -> "FAH";
+                case "06" -> "FDK";
+                case "07" -> "FEBI";
+                case "08" -> "FST";
+                case "09" -> "FPSI";
+                case "10" -> "FISIP";
+                default -> throw new IllegalStateException("Unexpected value: " + gajiFirst.getKodeAnakSatker());
+            };
+            Optional<Rekap> rekapOpt = rekapService.findByJenisRekapAndTahunAndBulanAndUnitGajiIdAndUnitRemunId("gaji", gajiFirst.getTahun(), gajiFirst.getBulan(), unitGaji, null);
+            if (rekapOpt.isPresent()) {
+                rekap = rekapOpt.get();
+            } else {
+                rekap.setTahun(gajiFirst.getTahun());
+                rekap.setBulan(gajiFirst.getBulan());
+                rekap.setJenisRekap("gaji");
+                rekap.setCreatedBy(pegawaiSimpegVO.getNama());
+                rekap.setCreatedDate(now);
+                rekap.setUnitGajiId(unitGaji);
+            }
+            rekap.setLastModifiedBy(pegawaiSimpegVO.getNama());
+            rekap.setLastModifiedDate(LocalDateTime.now());
+            gajiService.deleteByBulanAndTahunAndKodeAnakSatker(gajiFirst.getBulan(), gajiFirst.getTahun(), gajiFirst.getKodeAnakSatker());
+            gajiService.saveAll(gajiList);
+            rekap.setProgress(100);
+            rekapService.save(rekap);
+        }
+    }
+
+    // Helper method untuk baca nilai cell
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> cell.getCellFormula();
+            default -> "";
+        };
     }
 
 }
