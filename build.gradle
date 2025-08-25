@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'id.ac.ar-raniry'
-version = '6.5.1.RELEASE'
+version = '6.6.0.RELEASE'
 
 java {
     toolchain {
@@ -36,6 +36,8 @@ dependencies {
     implementation 'net.sf.jasperreports:jasperreports:6.21.3'
     implementation 'org.apache.tika:tika-core:3.0.0'
     implementation 'com.github.mwiede:jsch:0.2.22'
+    implementation 'org.apache.poi:poi:5.4.1'
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
