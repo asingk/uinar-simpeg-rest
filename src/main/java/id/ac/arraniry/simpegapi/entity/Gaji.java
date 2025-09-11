@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,19 +19,19 @@ public class Gaji {
     private Integer tahun;
     private String nip;
     private String nama;
-    private Integer gajiPokok;
-    private Integer tunjanganIstri;
-    private Integer tunjanganAnak;
-    private Integer tunjanganUmum;
-    private Integer tunjanganStruktural;
-    private Integer tunjanganFungsional;
-    private Integer pembulatan;
-    private Integer tunjanganBeras;
-    private Integer tunjanganPajak;
-    private Integer iwp;
-    private Integer pph;
-    private Integer netto;
-    private Integer bpjs;
+    private BigDecimal gajiPokok;
+    private BigDecimal tunjanganIstri;
+    private BigDecimal tunjanganAnak;
+    private BigDecimal tunjanganUmum;
+    private BigDecimal tunjanganStruktural;
+    private BigDecimal tunjanganFungsional;
+    private BigDecimal pembulatan;
+    private BigDecimal tunjanganBeras;
+    private BigDecimal tunjanganPajak;
+    private BigDecimal iwp;
+    private BigDecimal pph;
+    private BigDecimal netto;
+    private BigDecimal bpjs;
     private String createdBy;
     private LocalDateTime createdDate;
 }
