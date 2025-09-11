@@ -12,7 +12,7 @@ public interface RekapUMPegawaiService {
     Optional<RekapUMPegawai> findById(String id);
     void deleteByTahunAndBulanAndUnitGaji(Integer tahun, Integer bulan, String unitGaji);
     void saveAll(List<RekapUMPegawai> rekapPegawais);
-    List<RekapUMPegawai> findByTahunAndBulanAndStatusPegawaiAndUnitGaji(Integer tahun, Integer bulan, String statusPegawai, String unitGaji);
-    List<RekapUMPegawai> findByTahunAndBulanAndStatusPegawai(Integer tahun, Integer bulan, String statusPegawai);
+    List<RekapUMPegawai> findByTahunAndBulanAndUnitGaji(Integer tahun, Integer bulan, String unitGaji);
+    List<RekapUMPegawai> findByTahunAndBulan(Integer tahun, Integer bulan);
 
 }

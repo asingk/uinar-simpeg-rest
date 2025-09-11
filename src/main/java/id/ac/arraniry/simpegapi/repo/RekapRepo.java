@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RekapRepo extends MongoRepository<Rekap, String> {
-    Optional<Rekap> findByJenisRekapAndTahunAndBulanAndUnitGajiIdAndUnitRemunId(String jenisRekap, Integer tahun, Integer bulan, String unitGajiId, String unitRemunId);
-    List<Rekap> findByJenisRekapAndTahunAndUnitGajiId(String jenisRekap, Integer tahun, String unitGajiId, Sort sort);
+    Optional<Rekap> findByJenisRekapAndTahunAndBulanAndUnitGajiId(String jenisRekap, Integer tahun, Integer bulan, String unitGajiId);
     List<Rekap> findByJenisRekapAndTahun(String jenisRekap, Integer tahun, Sort sort);
+    Optional<Rekap> findByJenisRekapAndTahunAndBulanAndKodeAnakSatker(String jenisRekap, Integer tahun, Integer bulan, String kodeAnakSatker);
+    List<Rekap> findByJenisRekapAndTahunAndKodeAnakSatker(String jenisRekap, Integer tahun, String kodeAnakSatker, Sort sort);
+    Optional<Rekap> findByJenisRekapAndTahunAndBulanAndUnitRemunId(String jenisRekap, Integer tahun, Integer bulan, String unitRemunId);
 }

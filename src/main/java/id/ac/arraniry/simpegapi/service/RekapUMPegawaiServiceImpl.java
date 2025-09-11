@@ -43,14 +43,14 @@ public class RekapUMPegawaiServiceImpl implements RekapUMPegawaiService {
     }
 
     @Override
-    public List<RekapUMPegawai> findByTahunAndBulanAndStatusPegawaiAndUnitGaji(Integer tahun, Integer bulan, String statusPegawai, String unitGaji) {
-        return rekapUMPegawaiRepo.findByTahunAndBulanAndStatusPegawaiAndUnitGaji(tahun, bulan, statusPegawai, unitGaji,
+    public List<RekapUMPegawai> findByTahunAndBulanAndUnitGaji(Integer tahun, Integer bulan, String unitGaji) {
+        return rekapUMPegawaiRepo.findByTahunAndBulanAndUnitGaji(tahun, bulan, unitGaji,
                 Sort.by(Sort.Direction.ASC, "nip"));
     }
 
     @Override
-    public List<RekapUMPegawai> findByTahunAndBulanAndStatusPegawai(Integer tahun, Integer bulan, String statusPegawai) {
-        return rekapUMPegawaiRepo.findByTahunAndBulanAndStatusPegawai(tahun, bulan, statusPegawai,
+    public List<RekapUMPegawai> findByTahunAndBulan(Integer tahun, Integer bulan) {
+        return rekapUMPegawaiRepo.findByTahunAndBulan(tahun, bulan,
                 Sort.by(Sort.Direction.ASC, "nip"));
     }
 }

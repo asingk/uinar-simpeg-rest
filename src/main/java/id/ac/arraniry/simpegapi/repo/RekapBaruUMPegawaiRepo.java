@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface RekapBaruUMPegawaiRepo extends MongoRepository<RekapBaruUMPegawai, String> {
     void deleteByTahunAndBulanAndUnitGaji(Integer tahun, Integer bulan, String unitGaji);
-    List<RekapBaruUMPegawai> findByTahunAndBulanAndStatusPegawaiAndUnitGaji(Integer tahun, Integer bulan, String statusPegawai, String unitGaji, Sort sort);
-    List<RekapBaruUMPegawai> findByTahunAndBulanAndStatusPegawai(Integer tahun, Integer bulan, String statusPegawai, Sort sort);
+    List<RekapBaruUMPegawai> findByTahunAndBulanAndUnitGaji(Integer tahun, Integer bulan, String unitGaji, Sort sort);
+    List<RekapBaruUMPegawai> findByTahunAndBulan(Integer tahun, Integer bulan, Sort sort);
 }

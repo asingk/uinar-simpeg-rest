@@ -14,6 +14,7 @@ public class Rekap {
     private Integer bulan;
     private String unitGajiId;
     private String unitRemunId;
+    private String kodeAnakSatker;
     private String namaFile;
     private String createdBy;
     private LocalDateTime createdDate;
