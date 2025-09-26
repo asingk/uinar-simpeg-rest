@@ -160,8 +160,8 @@ public class PegawaiRest {
     }
 
     @GetMapping("/{idPegawai}/gaji")
-    public List<Gaji> getByNip(@PathVariable String idPegawai, @RequestParam Integer tahun) {
-        return gajiService.findByNipAndTahun(idPegawai, tahun);
+    public List<Gaji> getByNip(@PathVariable String idPegawai, @RequestParam Integer tahun, @RequestParam(name = "bulan", required = false) Integer bulan) {
+        return gajiService.findGajiPegawai(idPegawai, tahun, bulan);
     }
 
 }

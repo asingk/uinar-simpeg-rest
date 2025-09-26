@@ -7,6 +7,6 @@ import java.util.List;
 public interface GajiService {
     List<Gaji> saveAll(List<Gaji> gajiList);
     void deleteByBulanAndTahunAndKodeAnakSatker(Integer bulan, Integer tahun, String kodeUnitGaji);
-    List<Gaji> findByNipAndTahun(String nip, Integer tahun);
+    List<Gaji> findGajiPegawai(String nip, Integer tahun, Integer bulan);
     Gaji findById(String id);
 }

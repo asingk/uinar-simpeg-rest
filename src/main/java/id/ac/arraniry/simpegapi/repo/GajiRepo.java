@@ -9,4 +9,5 @@ import java.util.List;
 public interface GajiRepo extends MongoRepository<Gaji, String> {
     void deleteByBulanAndTahunAndKodeAnakSatker(Integer bulan, Integer tahun, String kodeAnakSatker);
     List<Gaji> findByNipAndTahun(String nip, Integer tahun, Sort sort);
+    List<Gaji> findByNipAndTahunAndBulan(String nip, Integer tahun, Integer bulan, Sort sort);
 }

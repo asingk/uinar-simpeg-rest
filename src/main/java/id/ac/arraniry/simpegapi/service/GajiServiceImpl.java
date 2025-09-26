@@ -28,8 +28,12 @@ public class GajiServiceImpl implements GajiService {
     }
 
     @Override
-    public List<Gaji> findByNipAndTahun(String nip, Integer tahun) {
-        return gajiRepo.findByNipAndTahun(nip, tahun, Sort.by(Sort.Direction.DESC, "bulan"));
+    public List<Gaji> findGajiPegawai(String nip, Integer tahun, Integer bulan) {
+        if (null != bulan && bulan > 0) {
+            return gajiRepo.findByNipAndTahunAndBulan(nip, tahun, bulan, Sort.by(Sort.Direction.DESC, "bulan"));
+        } else {
+            return gajiRepo.findByNipAndTahun(nip, tahun, Sort.by(Sort.Direction.DESC, "bulan"));
+        }
     }
 
     @Override
