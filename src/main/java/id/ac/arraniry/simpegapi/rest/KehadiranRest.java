@@ -60,7 +60,7 @@ public class KehadiranRest {
 //		log.debug("getStatusSaatIni start " + System.currentTimeMillis());
         StatusSaatIniResponse status = new StatusSaatIniResponse();
         //TODO dev purpose only
-//		LocalDateTime now = LocalDateTime.of(LocalDate.of(2024, 12, 30), LocalTime.of(17, 15, 0));
+//		LocalDateTime now = LocalDateTime.of(LocalDate.of(2025, 10, 7), LocalTime.of(17, 15, 0));
         LocalDateTime now = LocalDateTime.now();
         boolean isRamadhan = hijriahService.isRamadhan(HijrahDate.now().get(ChronoField.YEAR), now.toLocalDate());
         status.setWaktu(now);

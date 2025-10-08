@@ -40,11 +40,12 @@ public class PegawaiRest {
     private final PemutihanService pemutihanService;
     private final KehadiranService kehadiranService;
     private final GajiService gajiService;
+    private final SurveyService surveyResultService;
 
     public PegawaiRest(LaporanService laporanService, JabatanBulananService jabatanBulananService, UsulIzinService usulIzinService,
                        RekapUMPegawaiService rekapUMPegawaiService, RekapRemunPegawaiService rekapRemunPegawaiService, KehadiranUtils kehadiranUtils,
                        KategoriIzinService kategoriIzinService, Environment environment, PemutihanService pemutihanService, KehadiranService kehadiranService,
-                       GajiService gajiService) {
+                       GajiService gajiService, SurveyService surveyResultService) {
         this.laporanService = laporanService;
         this.jabatanBulananService = jabatanBulananService;
         this.usulIzinService = usulIzinService;
@@ -56,6 +57,7 @@ public class PegawaiRest {
         this.pemutihanService = pemutihanService;
         this.kehadiranService = kehadiranService;
         this.gajiService = gajiService;
+        this.surveyResultService = surveyResultService;
     }
 
     @Operation(summary = "Melihat riwayat kehadiran bulanan pegawai")
@@ -164,4 +166,13 @@ public class PegawaiRest {
         return gajiService.findGajiPegawai(idPegawai, tahun, bulan);
     }
 
+    @GetMapping("/{idPegawai}/findTodayAnswer")
+    public SurveyResult findTodayAnswerByNip(@PathVariable String idPegawai) {
+        return surveyResultService.findTodayAnswerByNip(idPegawai);
+    }
+
+    @PostMapping("/{idPegawai}/survey/{idSurvey}/answer")
+    public CreateResponse answerSurvey(@PathVariable String idPegawai, @PathVariable String idSurvey, @RequestParam String answer) {
+        return surveyResultService.answer(idPegawai, idSurvey, answer);
+    }
 }
