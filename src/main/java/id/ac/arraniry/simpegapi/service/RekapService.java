@@ -24,5 +24,7 @@ public interface RekapService {
     SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId);
     UangMakanPegawaiVO getUangMakanByNipDetail(String id);
     RemunPegawaiVO getRemunByNipDetail(String id);
-    File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan) throws JRException, FileNotFoundException;
+    File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan)
+            throws JRException, FileNotFoundException;
+    void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker);
 }

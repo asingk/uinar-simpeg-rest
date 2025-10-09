@@ -328,6 +328,11 @@ public class RekapServiceImpl implements RekapService {
         return ResourceUtils.getFile(GlobalConstants.SAVE_FOLDER + File.separator + fileName);
     }
 
+    @Override
+    public void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker) {
+
+    }
+
     private void randomDelay() {
         try {
             Thread.sleep(500);
