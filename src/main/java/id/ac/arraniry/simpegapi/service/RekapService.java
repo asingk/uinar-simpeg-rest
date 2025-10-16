@@ -26,5 +26,5 @@ public interface RekapService {
     RemunPegawaiVO getRemunByNipDetail(String id);
     File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan)
             throws JRException, FileNotFoundException;
-    void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker);
+    void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker, Integer tahun, Integer bulan);
 }

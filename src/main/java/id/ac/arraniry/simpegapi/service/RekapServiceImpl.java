@@ -3,6 +3,7 @@ package id.ac.arraniry.simpegapi.service;
 import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.repo.RekapRepo;
+import id.ac.arraniry.simpegapi.utils.ExcelUtils;
 import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
 import net.sf.jasperreports.engine.*;
@@ -49,10 +50,12 @@ public class RekapServiceImpl implements RekapService {
     private final RekapRemunPegawaiService rekapRemunPegawaiService;
     private final RekapRemunGradeService rekapRemunGradeService;
     private final Environment environment;
+    private final PotonganUnitGajiService potonganUnitGajiService;
 
     public RekapServiceImpl(RekapRepo rekapRepo, GajiService gajiService, KehadiranUtils kehadiranUtils, JabatanBulananService jabatanBulananService,
                             LaporanService laporanService, RekapBaruUMPegawaiService rekapBaruUMPegawaiService, RekapUMPegawaiService rekapUMPegawaiService,
-                            RekapRemunPegawaiService rekapRemunPegawaiService, RekapRemunGradeService rekapRemunGradeService, Environment environment) {
+                            RekapRemunPegawaiService rekapRemunPegawaiService, RekapRemunGradeService rekapRemunGradeService, Environment environment,
+                            PotonganUnitGajiService potonganUnitGajiService) {
         this.rekapRepo = rekapRepo;
         this.gajiService = gajiService;
         this.kehadiranUtils = kehadiranUtils;
@@ -63,6 +66,7 @@ public class RekapServiceImpl implements RekapService {
         this.rekapRemunPegawaiService = rekapRemunPegawaiService;
         this.rekapRemunGradeService = rekapRemunGradeService;
         this.environment = environment;
+        this.potonganUnitGajiService = potonganUnitGajiService;
     }
 
     @Override
@@ -90,12 +94,10 @@ public class RekapServiceImpl implements RekapService {
         PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
 
         // Validasi file
-        if (file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File tidak boleh kosong");
-        }
+        validateGajiExcel(file);
 
         // Baca data dari Excel
-        List<Map<String, String>> excelData = readExcel(file);
+        List<Map<String, String>> excelData = readGajiXlsx(file);
 
         if (excelData.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tidak ada data yang dapat dibaca dari file");
@@ -115,7 +117,7 @@ public class RekapServiceImpl implements RekapService {
             data.setCreatedDate(now);
             gajiList.add(data);
         }
-        saveRekap(gajiList.get(0), pegawaiSimpegVO, now);
+        saveRekap("gaji", gajiList.get(0).getTahun(), gajiList.get(0).getBulan(), gajiList.get(0).getKodeAnakSatker(), pegawaiSimpegVO.getNama(), now);
         gajiService.deleteByBulanAndTahunAndKodeAnakSatker(gajiList.get(0).getBulan(), gajiList.get(0).getTahun(), gajiList.get(0).getKodeAnakSatker());
         gajiService.saveAll(gajiList);
     }
@@ -329,8 +331,24 @@ public class RekapServiceImpl implements RekapService {
     }
 
     @Override
-    public void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker) {
+    public void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker, Integer tahun, Integer bulan) {
+        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
 
+        // Validasi file
+        validateGajiExcel(file);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Baca data dari Excel menggunakan ExcelUtils
+        List<PotonganUnitGaji> excelData = ExcelUtils.readPotonganExcel(file, kodeAnakSatker, tahun, bulan, now, pegawaiSimpegVO.getNama());
+
+        if (excelData.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tidak ada data yang dapat dibaca dari file");
+        }
+
+        saveRekap("pot", tahun, bulan, kodeAnakSatker, pegawaiSimpegVO.getNama(), now);
+        potonganUnitGajiService.deleteByBulanAndTahunAndKodeAnakSatker(bulan, tahun, kodeAnakSatker);
+        potonganUnitGajiService.saveAll(excelData);
     }
 
     private void randomDelay() {
@@ -420,7 +438,11 @@ public class RekapServiceImpl implements RekapService {
         save(rekap);
     }
 
-    private List<Map<String, String>> readExcel(MultipartFile file) {
+    private void validateGajiExcel(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File tidak boleh kosong");
+        }
+
         String fileName = file.getOriginalFilename();
 
         if (fileName == null) {
@@ -431,11 +453,9 @@ public class RekapServiceImpl implements RekapService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Hanya file XLSX yang didukung. File yang diupload: " + fileName);
         }
-
-        return readXlsx(file);
     }
 
-    private List<Map<String, String>> readXlsx(MultipartFile file) {
+    private List<Map<String, String>> readGajiXlsx(MultipartFile file) {
         List<Map<String, String>> result = new ArrayList<>();
 
         try (InputStream is = file.getInputStream();
@@ -617,20 +637,20 @@ public class RekapServiceImpl implements RekapService {
         return BigDecimal.ZERO;
     }
 
-    private void saveRekap(Gaji data, PegawaiSimpegVO pegawaiSimpegVO, LocalDateTime now) {
-        Optional<Rekap> rekapOpt = rekapRepo.findByJenisRekapAndTahunAndBulanAndKodeAnakSatker("gaji", data.getTahun(), data.getBulan(), data.getKodeAnakSatker());
+    private void saveRekap(String jenisRekap, Integer tahun, Integer bulan, String kodeAnakSatker, String nama, LocalDateTime now) {
+        Optional<Rekap> rekapOpt = rekapRepo.findByJenisRekapAndTahunAndBulanAndKodeAnakSatker(jenisRekap, tahun, bulan, kodeAnakSatker);
         Rekap rekap = new Rekap();
         if (rekapOpt.isPresent()) {
             rekap = rekapOpt.get();
         } else {
-            rekap.setTahun(data.getTahun());
-            rekap.setBulan(data.getBulan());
-            rekap.setJenisRekap("gaji");
-            rekap.setCreatedBy(pegawaiSimpegVO.getNama());
+            rekap.setTahun(tahun);
+            rekap.setBulan(bulan);
+            rekap.setJenisRekap(jenisRekap);
+            rekap.setCreatedBy(nama);
             rekap.setCreatedDate(now);
-            rekap.setKodeAnakSatker(data.getKodeAnakSatker());
+            rekap.setKodeAnakSatker(kodeAnakSatker);
         }
-        rekap.setLastModifiedBy(pegawaiSimpegVO.getNama());
+        rekap.setLastModifiedBy(nama);
         rekap.setLastModifiedDate(now);
         rekap.setProgress(100);
         save(rekap);

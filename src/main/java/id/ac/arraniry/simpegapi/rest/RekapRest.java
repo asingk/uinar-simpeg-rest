@@ -106,8 +106,9 @@ public class RekapRest {
     @Operation(summary = "Meng-upload file potongan unit gaji")
     @PostMapping("/potongan-gaji/upload")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void uploadPotonganGajiFile(@RequestParam MultipartFile file, @RequestParam String createdBy, @RequestParam String kodeAnakSatker) {
-        rekapService.processGajiFile(file, createdBy);
+    public void uploadPotonganGajiFile(@RequestParam MultipartFile file, @RequestParam String createdBy, @RequestParam String kodeAnakSatker,
+                                       @RequestParam Integer tahun, @RequestParam Integer bulan) {
+        rekapService.processPotonganGajiFile(file, createdBy, kodeAnakSatker, tahun, bulan);
     }
 
 }

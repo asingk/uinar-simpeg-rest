@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class PotonganUnitGaji {
@@ -16,16 +17,7 @@ public class PotonganUnitGaji {
     private String nip;
     private String nama;
     private BigDecimal gajiBersih;
-    private BigDecimal pinjaman;
-    private BigDecimal pengembalian;
-    private BigDecimal dw;
-    private BigDecimal korpri;
-    private BigDecimal masjid;
-    private BigDecimal sosialUIN;
-    private BigDecimal zakat;
-    private BigDecimal infaq;
-    private BigDecimal bsm;
-    private BigDecimal hikmahWakilah;
+    private List<PotonganUnitGajiItem> potongan;
     private BigDecimal jumlahPotongan;
     private BigDecimal thp;
     private String createdBy;
