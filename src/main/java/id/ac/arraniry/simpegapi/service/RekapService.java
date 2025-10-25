@@ -20,11 +20,13 @@ public interface RekapService {
     List<Rekap> findByJenisRekapAndTahun(String jenisRekap, Integer tahun);
     void processGajiFile(MultipartFile file, String createdBy);
     List<Rekap> findByJenisRekapAndTahunAndKodeAnakSatker(String jenisRekap, Integer tahun, String kodeAnakSatker);
+    List<Rekap> findByJenisRekapAndTahunAndUnitGajiId(String jenisRekap, Integer tahun, String unitGajiId);
     void processRekap(UangMakanCreateRequest request);
     SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId);
     UangMakanPegawaiVO getUangMakanByNipDetail(String id);
     RemunPegawaiVO getRemunByNipDetail(String id);
     File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan)
             throws JRException, FileNotFoundException;
-    void processPotonganGajiFile(MultipartFile file, String createdBy, String kodeAnakSatker, Integer tahun, Integer bulan);
+    void processPotonganGajiFile(MultipartFile file, String createdBy, String unitGajiId, Integer tahun, Integer bulan);
+    void deletePotonganGaji(String unitGajiId, Integer tahun, Integer bulan);
 }

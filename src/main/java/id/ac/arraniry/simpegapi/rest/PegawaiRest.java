@@ -40,11 +40,12 @@ public class PegawaiRest {
     private final PemutihanService pemutihanService;
     private final KehadiranService kehadiranService;
     private final GajiService gajiService;
+    private final PotonganUnitGajiService potonganUnitGajiService;
 
     public PegawaiRest(LaporanService laporanService, JabatanBulananService jabatanBulananService, UsulIzinService usulIzinService,
                        RekapUMPegawaiService rekapUMPegawaiService, RekapRemunPegawaiService rekapRemunPegawaiService, KehadiranUtils kehadiranUtils,
                        KategoriIzinService kategoriIzinService, Environment environment, PemutihanService pemutihanService, KehadiranService kehadiranService,
-                       GajiService gajiService) {
+                       GajiService gajiService, PotonganUnitGajiService potonganUnitGajiService) {
         this.laporanService = laporanService;
         this.jabatanBulananService = jabatanBulananService;
         this.usulIzinService = usulIzinService;
@@ -56,6 +57,7 @@ public class PegawaiRest {
         this.pemutihanService = pemutihanService;
         this.kehadiranService = kehadiranService;
         this.gajiService = gajiService;
+        this.potonganUnitGajiService = potonganUnitGajiService;
     }
 
     @Operation(summary = "Melihat riwayat kehadiran bulanan pegawai")
@@ -160,8 +162,13 @@ public class PegawaiRest {
     }
 
     @GetMapping("/{idPegawai}/gaji")
-    public List<Gaji> getByNip(@PathVariable String idPegawai, @RequestParam Integer tahun, @RequestParam(name = "bulan", required = false) Integer bulan) {
+    public List<Gaji> getGajiByNip(@PathVariable String idPegawai, @RequestParam Integer tahun, @RequestParam(name = "bulan", required = false) Integer bulan) {
         return gajiService.findGajiPegawai(idPegawai, tahun, bulan);
+    }
+
+    @GetMapping("/{idPegawai}/potongan-gaji")
+    public List<PotonganUnitGaji> getPotonganGajiByNip(@PathVariable String idPegawai, @RequestParam Integer tahun) {
+        return potonganUnitGajiService.findPotonganGajiPegawai(idPegawai, tahun);
     }
 
 }

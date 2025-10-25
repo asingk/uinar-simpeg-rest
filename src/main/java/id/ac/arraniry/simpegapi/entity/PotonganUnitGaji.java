@@ -11,7 +11,8 @@ import java.util.List;
 public class PotonganUnitGaji {
     @Id
     private String id;
-    private String kodeAnakSatker;
+    private String unitGajiId;
+    private String unitGajiNama;
     private Integer bulan;
     private Integer tahun;
     private String nip;

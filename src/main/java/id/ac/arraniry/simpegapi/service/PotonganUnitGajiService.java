@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface PotonganUnitGajiService {
     List<PotonganUnitGaji> saveAll(List<PotonganUnitGaji> gajiList);
-    void deleteByBulanAndTahunAndKodeAnakSatker(Integer bulan, Integer tahun, String kodeUnitGaji);
+    void deleteByBulanAndTahunAndUnitGajiId(Integer bulan, Integer tahun, String unitGajiId);
+    List<PotonganUnitGaji> findPotonganGajiPegawai(String nip, Integer tahun);
+    PotonganUnitGaji findById(String id);
 }
