@@ -42,13 +42,7 @@ public class ExcelUtils {
         Cell cell = row.getCell(colIndex);
         if (cell == null) return BigDecimal.ZERO;
 
-        String rawValue;
-        try {
-            rawValue = formatter.formatCellValue(cell, evaluator);
-        } catch (Exception ex) {
-            // fallback ke string mentah (misal rumus eksternal)
-            rawValue = cell.toString();
-        }
+        String rawValue = formatter.formatCellValue(cell, evaluator);
 
         if (rawValue == null || rawValue.isEmpty()) return BigDecimal.ZERO;
 
@@ -65,7 +59,7 @@ public class ExcelUtils {
     /**
      * Fungsi untuk mendapatkan data Unit Gaji dari GraphQL
      */
-    public static UnitGajiVO getUnitGajiFromGraphQL(String unitGajiId, Environment environment) {
+    private static UnitGajiVO getUnitGajiFromGraphQL(String unitGajiId, Environment environment) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -128,7 +122,7 @@ public class ExcelUtils {
     }
 
     // getPotonganHeaders yang memakai evaluator
-    public static List<String> getPotonganHeaders(Sheet sheet, int start, int end, FormulaEvaluator evaluator) {
+    private static List<String> getPotonganHeaders(Sheet sheet, int start, int end, FormulaEvaluator evaluator) {
         Row rowStart = sheet.getRow(start);
         Row rowEnd = sheet.getRow(end);
         List<String> headers = new ArrayList<>();
@@ -167,7 +161,7 @@ public class ExcelUtils {
     public static List<PotonganUnitGaji> readPotonganExcel(MultipartFile file, String unitGajiId,
                                                            Integer tahun, Integer bulan,
                                                            LocalDateTime now, String nama,
-                                                           Environment environment) {
+                                                           Environment environment, String rekapId) {
 
         // Ambil data Unit Gaji dari GraphQL
         UnitGajiVO unitGajiVO = getUnitGajiFromGraphQL(unitGajiId, environment);
@@ -197,6 +191,7 @@ public class ExcelUtils {
                 if (!isValidNoCell(noCell)) break;
 
                 PotonganUnitGaji potonganUnitGaji = new PotonganUnitGaji();
+                potonganUnitGaji.setNip(getString(row, config.nipColumn, evaluator));
                 potonganUnitGaji.setNama(getString(row, config.namaColumn, evaluator));
                 potonganUnitGaji.setGajiBersih(getBigDecimal(row, config.gajiBersihColumn, evaluator));
 
@@ -213,7 +208,6 @@ public class ExcelUtils {
                 // Jumlah Potongan dan THP
                 potonganUnitGaji.setJumlahPotongan(getBigDecimal(row, config.jumlahPotonganColumn, evaluator));
                 potonganUnitGaji.setThp(getBigDecimal(row, config.thpColumn, evaluator));
-                potonganUnitGaji.setNip(getString(row, config.nipColumn, evaluator));
 
                 potonganUnitGaji.setUnitGajiId(unitGajiId);
                 potonganUnitGaji.setUnitGajiNama(unitGajiVO.getNama()); // Simpan nama dari GraphQL
@@ -221,6 +215,8 @@ public class ExcelUtils {
                 potonganUnitGaji.setBulan(bulan);
                 potonganUnitGaji.setCreatedBy(nama);
                 potonganUnitGaji.setCreatedDate(now);
+                potonganUnitGaji.setIsNipExist(isPegawaiExistInSimpeg(potonganUnitGaji.getNip(), environment));
+                potonganUnitGaji.setRekapId(rekapId);
 
                 list.add(potonganUnitGaji);
             }
@@ -280,4 +276,37 @@ public class ExcelUtils {
                                    int namaColumn, int gajiBersihColumn, int potonganStartCol, int potonganEndCol,
                                    int jumlahPotonganColumn, int thpColumn, int nipColumn, Set<Integer> skipColumns) {
     }
+
+    private static boolean isPegawaiExistInSimpeg(String idPegawai, Environment environment) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("apikey", environment.getProperty("env.data.secret-key"));
+
+        String query = "{\"query\":\"query Pegawai($id: ID!) {" +
+                "  pegawai(id: $id) {" +
+                "    id" +
+                "}}\",\"variables\":{\"id\":\"" + idPegawai + "\"},\"operationName\":\"Pegawai\"}";
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                Objects.requireNonNull(environment.getProperty("env.data.simpeg-graphql-url")),
+                new HttpEntity<>(query, headers),
+                String.class);
+
+        if(200 != response.getStatusCode().value()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak diizinkan mengakses GraphQL!");
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode actualObj = mapper.readTree(response.getBody());
+            JsonNode pegawai = actualObj.get("data").get("pegawai");
+
+            return pegawai != null && !pegawai.isNull();
+        } catch (JsonProcessingException jpe) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error parsing response GraphQL: " + jpe.getMessage());
+        }
+    }
+    
 }

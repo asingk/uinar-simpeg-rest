@@ -122,9 +122,14 @@ public class RekapRest {
         rekapService.processPotonganGajiFile(file, createdBy, unitGajiId, tahun, bulan);
     }
 
-    @DeleteMapping("/potongan-gaji")
-    public void deletePotonganGaji(@RequestParam String unitGajiId, @RequestParam Integer tahun, @RequestParam Integer bulan) {
-        rekapService.deletePotonganGaji(unitGajiId, tahun, bulan);
+    @DeleteMapping("/{id}/potongan-gaji")
+    public void deletePotonganGaji(@PathVariable String id) {
+        rekapService.deleteRekapPotonganGaji(id);
+    }
+
+    @GetMapping("/{id}/potongan-gaji-pegawai")
+    public List<PotonganUnitGaji> getRekapPegawai(@PathVariable String id) {
+        return potonganUnitGajiService.findByRekapId(id);
     }
 
     @GetMapping("/potongan-gaji-pegawai/{id}")

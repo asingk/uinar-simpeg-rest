@@ -23,4 +23,6 @@ public class PotonganUnitGaji {
     private BigDecimal thp;
     private String createdBy;
     private LocalDateTime createdDate;
+    private Boolean isNipExist;
+    private String rekapId;
 }

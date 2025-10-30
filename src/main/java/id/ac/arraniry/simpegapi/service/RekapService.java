@@ -28,5 +28,5 @@ public interface RekapService {
     File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan)
             throws JRException, FileNotFoundException;
     void processPotonganGajiFile(MultipartFile file, String createdBy, String unitGajiId, Integer tahun, Integer bulan);
-    void deletePotonganGaji(String unitGajiId, Integer tahun, Integer bulan);
+    void deleteRekapPotonganGaji(String id);
 }

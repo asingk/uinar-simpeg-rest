@@ -343,23 +343,24 @@ public class RekapServiceImpl implements RekapService {
         validateGajiExcel(file);
 
         LocalDateTime now = LocalDateTime.now();
+        Rekap rekap = saveRekapPotonganGaji(tahun, bulan, unitGajiId, pegawaiSimpegVO.getNama(), now);
 
         // Baca data dari Excel menggunakan ExcelUtils
-        List<PotonganUnitGaji> excelData = ExcelUtils.readPotonganExcel(file, unitGajiId, tahun, bulan, now, pegawaiSimpegVO.getNama(), environment);
+        List<PotonganUnitGaji> excelData = ExcelUtils.readPotonganExcel(file, unitGajiId, tahun, bulan, now, pegawaiSimpegVO.getNama(), environment,
+                rekap.getId());
 
         if (excelData.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tidak ada data yang dapat dibaca dari file");
         }
 
-        saveRekapPotonganGaji(tahun, bulan, unitGajiId, pegawaiSimpegVO.getNama(), now);
-        potonganUnitGajiService.deleteByBulanAndTahunAndUnitGajiId(bulan, tahun, unitGajiId);
+        potonganUnitGajiService.deleteByRekapId(rekap.getId());
         potonganUnitGajiService.saveAll(excelData);
     }
 
     @Override
-    public void deletePotonganGaji(String unitGajiId, Integer tahun, Integer bulan) {
-        potonganUnitGajiService.deleteByBulanAndTahunAndUnitGajiId(bulan, tahun, unitGajiId);
-        rekapRepo.deleteByJenisRekapAndTahunAndBulanAndUnitGajiId("pot", tahun, bulan, unitGajiId);
+    public void deleteRekapPotonganGaji(String id) {
+        potonganUnitGajiService.deleteByRekapId(id);
+        rekapRepo.deleteById(id);
     }
 
     private void randomDelay() {
@@ -667,7 +668,7 @@ public class RekapServiceImpl implements RekapService {
         save(rekap);
     }
 
-    private void saveRekapPotonganGaji(Integer tahun, Integer bulan, String unitGajiId, String nama, LocalDateTime now) {
+    private Rekap saveRekapPotonganGaji(Integer tahun, Integer bulan, String unitGajiId, String nama, LocalDateTime now) {
         Optional<Rekap> rekapOpt = rekapRepo.findByJenisRekapAndTahunAndBulanAndUnitGajiId("pot", tahun, bulan, unitGajiId);
         Rekap rekap = new Rekap();
         if (rekapOpt.isPresent()) {
@@ -683,7 +684,7 @@ public class RekapServiceImpl implements RekapService {
         rekap.setLastModifiedBy(nama);
         rekap.setLastModifiedDate(now);
         rekap.setProgress(100);
-        save(rekap);
+        return save(rekap);
     }
 
 }

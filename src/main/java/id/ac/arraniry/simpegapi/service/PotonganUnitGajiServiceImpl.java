@@ -37,4 +37,14 @@ public class PotonganUnitGajiServiceImpl implements PotonganUnitGajiService{
     public PotonganUnitGaji findById(String id) {
         return potonganUnitGajiRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
+
+    @Override
+    public List<PotonganUnitGaji> findByRekapId(String rekapId) {
+        return potonganUnitGajiRepo.findByRekapId(rekapId, Sort.by(Sort.Direction.ASC, "nip"));
+    }
+
+    @Override
+    public void deleteByRekapId(String rekapId) {
+        potonganUnitGajiRepo.deleteByRekapId(rekapId);
+    }
 }
