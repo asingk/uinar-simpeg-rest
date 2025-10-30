@@ -27,10 +27,12 @@ import java.util.*;
 public class RekapRest {
     private final RekapService rekapService;
     private final GajiService gajiService;
+    private final PotonganUnitGajiService potonganUnitGajiService;
 
-    public RekapRest(RekapService rekapService, GajiService gajiService) {
+    public RekapRest(RekapService rekapService, GajiService gajiService, PotonganUnitGajiService potonganUnitGajiService) {
         this.rekapService = rekapService;
         this.gajiService = gajiService;
+        this.potonganUnitGajiService = potonganUnitGajiService;
     }
 
     @Operation(summary = "Melihat uang makan detail bulanan pegawai")
@@ -47,10 +49,19 @@ public class RekapRest {
 
     @GetMapping("/gaji")
     public List<Rekap> gaji(@RequestParam Integer tahun, @RequestParam(required = false) String kodeAnakSatker) {
-        if (kodeAnakSatker == null) {
+        if (kodeAnakSatker == null || kodeAnakSatker.isEmpty()) {
             return rekapService.findByJenisRekapAndTahun("gaji", tahun);
         } else {
             return rekapService.findByJenisRekapAndTahunAndKodeAnakSatker("gaji", tahun, kodeAnakSatker);
+        }
+    }
+
+    @GetMapping("/potongan-gaji")
+    public List<Rekap> potonganGaji(@RequestParam Integer tahun, @RequestParam(required = false) String unitGajiId) {
+        if (unitGajiId == null || unitGajiId.isEmpty()) {
+            return rekapService.findByJenisRekapAndTahun("pot", tahun);
+        } else {
+            return rekapService.findByJenisRekapAndTahunAndUnitGajiId("pot", tahun, unitGajiId);
         }
     }
 
@@ -101,6 +112,29 @@ public class RekapRest {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void uploadFile(@RequestParam MultipartFile file, @RequestParam String createdBy) {
         rekapService.processGajiFile(file, createdBy);
+    }
+
+    @Operation(summary = "Meng-upload file potongan unit gaji")
+    @PostMapping("/potongan-gaji/upload")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void uploadPotonganGajiFile(@RequestParam MultipartFile file, @RequestParam String createdBy, @RequestParam String unitGajiId,
+                                       @RequestParam Integer tahun, @RequestParam Integer bulan) {
+        rekapService.processPotonganGajiFile(file, createdBy, unitGajiId, tahun, bulan);
+    }
+
+    @DeleteMapping("/{id}/potongan-gaji")
+    public void deletePotonganGaji(@PathVariable String id) {
+        rekapService.deleteRekapPotonganGaji(id);
+    }
+
+    @GetMapping("/{id}/potongan-gaji-pegawai")
+    public List<PotonganUnitGaji> getRekapPegawai(@PathVariable String id) {
+        return potonganUnitGajiService.findByRekapId(id);
+    }
+
+    @GetMapping("/potongan-gaji-pegawai/{id}")
+    public PotonganUnitGaji getDetailPotonganGajiPegawai(@PathVariable String id) {
+        return potonganUnitGajiService.findById(id);
     }
 
 }
