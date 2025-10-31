@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'id.ac.ar-raniry'
-version = '6.9.0.RELEASE'
+version = '6.9.1.RELEASE'
 
 java {
     toolchain {

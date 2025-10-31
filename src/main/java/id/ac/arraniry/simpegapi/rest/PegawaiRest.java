@@ -40,13 +40,13 @@ public class PegawaiRest {
     private final PemutihanService pemutihanService;
     private final KehadiranService kehadiranService;
     private final GajiService gajiService;
+    private final SurveyService surveyResultService;
     private final PotonganUnitGajiService potonganUnitGajiService;
 
     public PegawaiRest(LaporanService laporanService, JabatanBulananService jabatanBulananService, UsulIzinService usulIzinService,
                        RekapUMPegawaiService rekapUMPegawaiService, RekapRemunPegawaiService rekapRemunPegawaiService, KehadiranUtils kehadiranUtils,
                        KategoriIzinService kategoriIzinService, Environment environment, PemutihanService pemutihanService, KehadiranService kehadiranService,
-                       GajiService gajiService, SurveyService surveyResultService) {
-                       GajiService gajiService, PotonganUnitGajiService potonganUnitGajiService) {
+                       GajiService gajiService, SurveyService surveyResultService, PotonganUnitGajiService potonganUnitGajiService) {
         this.laporanService = laporanService;
         this.jabatanBulananService = jabatanBulananService;
         this.usulIzinService = usulIzinService;
