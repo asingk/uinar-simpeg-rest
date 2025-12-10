@@ -1,12 +1,10 @@
 package id.ac.arraniry.simpegapi.service;
 
 import id.ac.arraniry.simpegapi.dto.RemunPegawaiVO;
-import id.ac.arraniry.simpegapi.dto.UangMakanCreateRequest;
 import id.ac.arraniry.simpegapi.dto.UangMakanPegawaiVO;
 import id.ac.arraniry.simpegapi.entity.Rekap;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,12 +19,16 @@ public interface RekapService {
     void processGajiFile(MultipartFile file, String createdBy);
     List<Rekap> findByJenisRekapAndTahunAndKodeAnakSatker(String jenisRekap, Integer tahun, String kodeAnakSatker);
     List<Rekap> findByJenisRekapAndTahunAndUnitGajiId(String jenisRekap, Integer tahun, String unitGajiId);
-    void processRekap(UangMakanCreateRequest request);
-    SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId);
+//    void processRekap(UangMakanCreateRequest request);
+//    SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId);
     UangMakanPegawaiVO getUangMakanByNipDetail(String id);
     RemunPegawaiVO getRemunByNipDetail(String id);
     File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan)
             throws JRException, FileNotFoundException;
     void processPotonganGajiFile(MultipartFile file, String createdBy, String unitGajiId, Integer tahun, Integer bulan);
     void deleteRekapPotonganGaji(String id);
+    void processRemunFile(MultipartFile file, String createdBy);
+    void processSelisihRemunFile(MultipartFile file, String createdBy, Integer tahun, Integer bulan, String unitRemunId);
+    void deleteRemun(String id);
+    void deleteSelisihRemun(String id);
 }

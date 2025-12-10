@@ -127,13 +127,14 @@ public class PegawaiRest {
     @GetMapping("/{idPegawai}/remun")
     public List<RekapRemunPegawai> getRemunByIdPegawai(@PathVariable String idPegawai, @RequestParam(required = false) Integer bulan,
                                                        @RequestParam("tahun") Integer tahun) {
-        List<RekapRemunPegawai> result = new ArrayList<>();
-        if (null != bulan) {
-            rekapRemunPegawaiService.findByNipAndTahunAndBulan(idPegawai, tahun, bulan).ifPresent(result::add);
-        } else {
-            result = rekapRemunPegawaiService.findByNipAndTahun(idPegawai, tahun, Sort.by(Sort.Direction.DESC, "bulan"));
-        }
-        return result;
+        return rekapRemunPegawaiService.findRemunPegawai(idPegawai, tahun, bulan);
+    }
+
+    @Operation(summary = "Mendapatkan daftar riwayat selisih remun bulanan pegawai")
+    @GetMapping("/{idPegawai}/selisih-remun")
+    public List<SelisihRekapRemunPegawai> getSelisihRemunByIdPegawai(@PathVariable String idPegawai, @RequestParam(required = false) Integer bulan,
+                                                       @RequestParam("tahun") Integer tahun) {
+        return rekapRemunPegawaiService.findSelisihRemunPegawai(idPegawai, tahun, bulan);
     }
 
     @Operation(summary = "Melihat status kehadiran pengguna saat ini")

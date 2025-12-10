@@ -139,407 +139,407 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         }).collect(Collectors.toList());
     }
 
-    @Override
-    public List<RekapRemunPegawai> findLaporanRemon(Integer bulan, Integer tahun, List<JabatanBulanan> jabatanBulanans) {
-        List<RekapRemunPegawai> rekapRemunPegawaiList = new ArrayList<>();
-        jabatanBulanans.forEach(row -> {
-            RekapRemunPegawai rekapRemunPegawai = findRemonPegawai(row.getNip(), tahun, bulan, row);
-            rekapRemunPegawaiList.add(rekapRemunPegawai);
-        });
-        return rekapRemunPegawaiList;
-    }
+//    @Override
+//    public List<RekapRemunPegawai> findLaporanRemon(Integer bulan, Integer tahun, List<JabatanBulanan> jabatanBulanans) {
+//        List<RekapRemunPegawai> rekapRemunPegawaiList = new ArrayList<>();
+//        jabatanBulanans.forEach(row -> {
+//            RekapRemunPegawai rekapRemunPegawai = findRemonPegawai(row.getNip(), tahun, bulan, row);
+//            rekapRemunPegawaiList.add(rekapRemunPegawai);
+//        });
+//        return rekapRemunPegawaiList;
+//    }
 
-    @Override
-    public List<RekapRemunGrade> findRekapRemonGrade(Integer bulan, Integer tahun, String unitRemun, List<RekapRemunPegawai> rekapRemunPegawaiList) {
-        rekapRemunPegawaiList.sort(Comparator.comparing(RekapRemunPegawai::getImplementasiRemun).reversed());
-        return generateRekapRemonGrade(bulan, tahun, unitRemun, rekapRemunPegawaiList);
-    }
+//    @Override
+//    public List<RekapRemunGrade> findRekapRemonGrade(Integer bulan, Integer tahun, String unitRemun, List<RekapRemunPegawai> rekapRemunPegawaiList) {
+//        rekapRemunPegawaiList.sort(Comparator.comparing(RekapRemunPegawai::getImplementasiRemun).reversed());
+//        return generateRekapRemonGrade(bulan, tahun, unitRemun, rekapRemunPegawaiList);
+//    }
 
-    protected List<RekapRemunGrade> generateRekapRemonGrade(Integer bulan, Integer tahun, String unitRemun, List <RekapRemunPegawai> rekapRemunPegawaiList) {
-        List<RekapRemunGrade> rekapRemonGradeVOS = new ArrayList<>();
-        int jumlahRemonP1 = 0;
-        int jumlahPotongan = 0;
-        int jumlahSetelahPotongan = 0;
-        int jumlahPajak = 0;
-        int jumlahNetto = 0;
-        int jumlahPenerima = 0;
-        for (int i = 0; i < rekapRemunPegawaiList.size(); i++) {
-            RekapRemunPegawai remonVO = rekapRemunPegawaiList.get(i);
-            RekapRemunGrade gradeVO = new RekapRemunGrade();
-            gradeVO.setTahun(tahun);
-            gradeVO.setBulan(bulan);
-            gradeVO.setUnitRemun(unitRemun);
-            if (i == 0 || Objects.equals(remonVO.getImplementasiRemun(), rekapRemunPegawaiList.get(i - 1).getImplementasiRemun())) {
-                jumlahRemonP1 += remonVO.getRemunP1();
-                jumlahPotongan += remonVO.getRupiahPotongan();
-                jumlahSetelahPotongan += remonVO.getSetelahPotongan();
-                jumlahPajak += remonVO.getRupiahPajak();
-                jumlahNetto += remonVO.getNetto();
-                jumlahPenerima++;
-            } else {
-                gradeVO.setGrade(rekapRemunPegawaiList.get(i - 1).getGrade());
-                gradeVO.setImplementasiRemunPersen(rekapRemunPegawaiList.get(i - 1).getImplementasiRemunPersen());
-                gradeVO.setImplementasiRemun(rekapRemunPegawaiList.get(i - 1).getImplementasiRemun());
-                gradeVO.setRemunP1(rekapRemunPegawaiList.get(i - 1).getRemunP1());
-                gradeVO.setJumlahRemunP1(jumlahRemonP1);
-                gradeVO.setJumlahPenerima(jumlahPenerima);
-                gradeVO.setJumlahPotongan(jumlahPotongan);
-                gradeVO.setJumlahSetelahPotongan(jumlahSetelahPotongan);
-                gradeVO.setJumlahPajak(jumlahPajak);
-                gradeVO.setJumlahNetto(jumlahNetto);
-                rekapRemonGradeVOS.add(gradeVO);
-                gradeVO = new RekapRemunGrade();
-                jumlahRemonP1 = remonVO.getRemunP1();
-                jumlahPotongan = remonVO.getRupiahPotongan();
-                jumlahSetelahPotongan = remonVO.getSetelahPotongan();
-                jumlahPajak = remonVO.getRupiahPajak();
-                jumlahNetto = remonVO.getNetto();
-                jumlahPenerima = 1;
-            }
-            if (i == rekapRemunPegawaiList.size() - 1) {
-                gradeVO.setGrade(remonVO.getGrade());
-                gradeVO.setImplementasiRemunPersen(remonVO.getImplementasiRemunPersen());
-                gradeVO.setImplementasiRemun(remonVO.getImplementasiRemun());
-                gradeVO.setRemunP1(remonVO.getRemunP1());
-                gradeVO.setJumlahRemunP1(jumlahRemonP1);
-                gradeVO.setJumlahPenerima(jumlahPenerima);
-                gradeVO.setJumlahPotongan(jumlahPotongan);
-                gradeVO.setJumlahSetelahPotongan(jumlahSetelahPotongan);
-                gradeVO.setJumlahPajak(jumlahPajak);
-                gradeVO.setJumlahNetto(jumlahNetto);
-                rekapRemonGradeVOS.add(gradeVO);
-            }
-        }
-        return rekapRemonGradeVOS;
-    }
+//    protected List<RekapRemunGrade> generateRekapRemonGrade(Integer bulan, Integer tahun, String unitRemun, List <RekapRemunPegawai> rekapRemunPegawaiList) {
+//        List<RekapRemunGrade> rekapRemonGradeVOS = new ArrayList<>();
+//        int jumlahRemonP1 = 0;
+//        int jumlahPotongan = 0;
+//        int jumlahSetelahPotongan = 0;
+//        int jumlahPajak = 0;
+//        int jumlahNetto = 0;
+//        int jumlahPenerima = 0;
+//        for (int i = 0; i < rekapRemunPegawaiList.size(); i++) {
+//            RekapRemunPegawai remonVO = rekapRemunPegawaiList.get(i);
+//            RekapRemunGrade gradeVO = new RekapRemunGrade();
+//            gradeVO.setTahun(tahun);
+//            gradeVO.setBulan(bulan);
+//            gradeVO.setUnitRemun(unitRemun);
+//            if (i == 0 || Objects.equals(remonVO.getImplementasiRemun(), rekapRemunPegawaiList.get(i - 1).getImplementasiRemun())) {
+//                jumlahRemonP1 += remonVO.getRemunP1();
+//                jumlahPotongan += remonVO.getRupiahPotongan();
+//                jumlahSetelahPotongan += remonVO.getSetelahPotongan();
+//                jumlahPajak += remonVO.getRupiahPajak();
+//                jumlahNetto += remonVO.getNetto();
+//                jumlahPenerima++;
+//            } else {
+//                gradeVO.setGrade(rekapRemunPegawaiList.get(i - 1).getGrade());
+//                gradeVO.setImplementasiRemunPersen(rekapRemunPegawaiList.get(i - 1).getImplementasiRemunPersen());
+//                gradeVO.setImplementasiRemun(rekapRemunPegawaiList.get(i - 1).getImplementasiRemun());
+//                gradeVO.setRemunP1(rekapRemunPegawaiList.get(i - 1).getRemunP1());
+//                gradeVO.setJumlahRemunP1(jumlahRemonP1);
+//                gradeVO.setJumlahPenerima(jumlahPenerima);
+//                gradeVO.setJumlahPotongan(jumlahPotongan);
+//                gradeVO.setJumlahSetelahPotongan(jumlahSetelahPotongan);
+//                gradeVO.setJumlahPajak(jumlahPajak);
+//                gradeVO.setJumlahNetto(jumlahNetto);
+//                rekapRemonGradeVOS.add(gradeVO);
+//                gradeVO = new RekapRemunGrade();
+//                jumlahRemonP1 = remonVO.getRemunP1();
+//                jumlahPotongan = remonVO.getRupiahPotongan();
+//                jumlahSetelahPotongan = remonVO.getSetelahPotongan();
+//                jumlahPajak = remonVO.getRupiahPajak();
+//                jumlahNetto = remonVO.getNetto();
+//                jumlahPenerima = 1;
+//            }
+//            if (i == rekapRemunPegawaiList.size() - 1) {
+//                gradeVO.setGrade(remonVO.getGrade());
+//                gradeVO.setImplementasiRemunPersen(remonVO.getImplementasiRemunPersen());
+//                gradeVO.setImplementasiRemun(remonVO.getImplementasiRemun());
+//                gradeVO.setRemunP1(remonVO.getRemunP1());
+//                gradeVO.setJumlahRemunP1(jumlahRemonP1);
+//                gradeVO.setJumlahPenerima(jumlahPenerima);
+//                gradeVO.setJumlahPotongan(jumlahPotongan);
+//                gradeVO.setJumlahSetelahPotongan(jumlahSetelahPotongan);
+//                gradeVO.setJumlahPajak(jumlahPajak);
+//                gradeVO.setJumlahNetto(jumlahNetto);
+//                rekapRemonGradeVOS.add(gradeVO);
+//            }
+//        }
+//        return rekapRemonGradeVOS;
+//    }
 
-    private RekapRemunPegawai findRemonPegawai(String nip, int tahun, int bulan, JabatanBulanan jabatanBulanan) {
-        var hadirList = findByNipAndBulanAndTahunAndIsDeletedFalse(nip, bulan, tahun);
-        return generateRemonPegawai(bulan, tahun, hadirList, jabatanBulanan);
-    }
+//    private RekapRemunPegawai findRemonPegawai(String nip, int tahun, int bulan, JabatanBulanan jabatanBulanan) {
+//        var hadirList = findByNipAndBulanAndTahunAndIsDeletedFalse(nip, bulan, tahun);
+//        return generateRemonPegawai(bulan, tahun, hadirList, jabatanBulanan);
+//    }
 
-    protected RekapRemunPegawai generateRemonPegawai (Integer bulan, Integer tahun, List <KehadiranVO> hadirList, JabatanBulanan jabatanBulanan){
-        RekapRemunPegawai rekapRemunPegawai = null;
-        int lengthOfMonth = YearMonth.of(tahun, bulan).lengthOfMonth();
-        List<LocalDate> hariLibur = hariLiburService.hariLiburBulanan(tahun, bulan);
-        int[][] potong = {{0, 0, 0, 0}, {0, 0, 0, 0}};
-        double persenPotong = 0;
-        if (hadirList.isEmpty()) {
-            int hariKerja = lengthOfMonth - hariLibur.size();
-            var izinList = izinService.findByNipAndTahunAndBulan(jabatanBulanan.getNip(), tahun, bulan);
-            int gakAbsen = hariKerja - izinList.size();
-            potong[0][0] = 0;
-            potong[0][1] = 0;
-            potong[0][2] = 0;
-            potong[0][3] = gakAbsen;
-            potong[1][0] = 0;
-            potong[1][1] = 0;
-            potong[1][2] = 0;
-            potong[1][3] = gakAbsen;
-            persenPotong = gakAbsen * 3;
-            rekapRemunPegawai = new RekapRemunPegawai();
-            rekapRemunPegawai.setNip(jabatanBulanan.getNip());
-            rekapRemunPegawai.setNama(jabatanBulanan.getNama());
-            rekapRemunPegawai.setUnitRemun(jabatanBulanan.getUnitRemun());
-            rekapRemunPegawai.setGolongan(jabatanBulanan.getGolongan());
-            rekapRemunPegawai.setGrade(jabatanBulanan.getGrade());
-            rekapRemunPegawai.setRemunGrade(jabatanBulanan.getRemunGrade());
-            rekapRemunPegawai.setNamaJabatan(jabatanBulanan.getJabatan());
-            rekapRemunPegawai.setImplementasiRemunPersen(jabatanBulanan.getImplementasiRemun());
-            rekapRemunPegawai.setImplementasiRemun(jabatanBulanan.getRemunGrade() * jabatanBulanan.getImplementasiRemun() / 100);
-            rekapRemunPegawai.setPersenPotongan(persenPotong);
-            rekapRemunPegawai.setRemunP1((int) Math.round(0.3 * rekapRemunPegawai.getImplementasiRemun()));
-            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-            rekapRemunPegawai.setPersenPajak(null != jabatanBulanan.getPajak() ? jabatanBulanan.getPajak() : 0);
-            rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-            rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-            rekapRemunPegawai.setTahun(tahun);
-            rekapRemunPegawai.setBulan(bulan);
-            insertRemonVO(rekapRemunPegawai, potong);
-        } else {
-            var pemutihanList = pemutihanService.findByBulanAndTahun(bulan, tahun);
-            int tanggal = 1;
-            int j = 0;
-            KehadiranVO kehadiranVO = null;
-            KehadiranVO nextHadirVO = null;
-            outerTgl:
-            while (tanggal <= lengthOfMonth) {
-                if (jabatanBulanan.getNip().equals("198812072018032001")) {
-                    System.out.println(jabatanBulanan.getNama());
-                }
-                if (tanggal == 1) {
-                    if (null != rekapRemunPegawai) {
-                        if (null != rekapRemunPegawai.getRemunP1()) {
-                            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-                            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-                            if (null != rekapRemunPegawai.getPersenPajak()) {
-                                rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-                                rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-                            }
-                        }
-                    }
-                    rekapRemunPegawai = new RekapRemunPegawai();
-                    potong[0][0] = 0;
-                    potong[0][1] = 0;
-                    potong[0][2] = 0;
-                    potong[0][3] = 0;
-                    potong[1][0] = 0;
-                    potong[1][1] = 0;
-                    potong[1][2] = 0;
-                    potong[1][3] = 0;
-                    persenPotong = 0;
-                }
-                LocalDate loopingDate = LocalDate.of(tahun, bulan, tanggal);
-                if (hariLibur.contains(loopingDate)) {
-                    if (null == kehadiranVO) {
-                        tanggal++;
-                    } else if (tanggal == lengthOfMonth) {
-                        rekapRemunPegawai.setPersenPotongan(persenPotong);
-                        if (j == hadirList.size() - 1) {
-                            if (null != rekapRemunPegawai.getRemunP1()) {
-                                rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-                                rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-                                if (null != rekapRemunPegawai.getPersenPajak()) {
-                                    rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-                                    rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-                                }
-                            }
-                        }
-                        insertRemonVO(rekapRemunPegawai, potong);
-                        if (j == hadirList.size() - 1) break;
-                        j++;
-                        tanggal = 1;
-                    } else {
-                        if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
-                            assert nextHadirVO != null;
-                            if (kehadiranVO.getWaktu().getDayOfMonth() != tanggal + 1 && nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1) {
-                                j++;
-                            }
-                        }
-                        tanggal++;
-                    }
-                    continue;
-                }
-
-                outerStatus:
-                for (int k = 0; k < 2; k++) {
-                    while (j < hadirList.size()) {
-                        kehadiranVO = hadirList.get(j);
-//                    if (kehadiranVO.getWaktu().toLocalDate().toString().equals("2023-05-26")) {
-//                        System.out.println(kehadiranVO.getNamaPegawai());
-//                    }
-                        if (j < hadirList.size() - 1) {
-                            nextHadirVO = hadirList.get(j + 1);
-                        }
-                        if (isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO) &&
-                                !kehadiranVO.getIdPegawai().equals(rekapRemunPegawai.getNip())) {    // sebelum ke pegawai selanjutnya
-//						if (null == kehadiranVO.getGradePegawai()) {
-//							System.out.println(kehadiranVO.getNamaPegawai());
-//                            System.out.println(kehadiranVO.getWaktu());
-//                            System.out.println(kehadiranVO.getStatus());
-//						}
-                            rekapRemunPegawai.setNip(kehadiranVO.getIdPegawai());
-                            rekapRemunPegawai.setNama(kehadiranVO.getNamaPegawai());
-                            rekapRemunPegawai.setUnitRemun(jabatanBulanan.getUnitRemun());
-                            rekapRemunPegawai.setGolongan(jabatanBulanan.getGolongan());
-                            rekapRemunPegawai.setTahun(tahun);
-                            rekapRemunPegawai.setBulan(bulan);
-//                            remonVO.setJenisJabatan(jabatanBulanan.getJenisJabatan());
-                            rekapRemunPegawai.setGrade(jabatanBulanan.getGrade());
-                            rekapRemunPegawai.setRemunGrade(jabatanBulanan.getRemunGrade());
-                            rekapRemunPegawai.setNamaJabatan(jabatanBulanan.getJabatan());
-                            rekapRemunPegawai.setImplementasiRemunPersen(jabatanBulanan.getImplementasiRemun());
-                            rekapRemunPegawai.setImplementasiRemun(jabatanBulanan.getRemunGrade() * jabatanBulanan.getImplementasiRemun() / 100);
-                            rekapRemunPegawai.setRemunP1((int) Math.round(0.3 * rekapRemunPegawai.getImplementasiRemun()));
+//    protected RekapRemunPegawai generateRemonPegawai (Integer bulan, Integer tahun, List <KehadiranVO> hadirList, JabatanBulanan jabatanBulanan){
+//        RekapRemunPegawai rekapRemunPegawai = null;
+//        int lengthOfMonth = YearMonth.of(tahun, bulan).lengthOfMonth();
+//        List<LocalDate> hariLibur = hariLiburService.hariLiburBulanan(tahun, bulan);
+//        int[][] potong = {{0, 0, 0, 0}, {0, 0, 0, 0}};
+//        double persenPotong = 0;
+//        if (hadirList.isEmpty()) {
+//            int hariKerja = lengthOfMonth - hariLibur.size();
+//            var izinList = izinService.findByNipAndTahunAndBulan(jabatanBulanan.getNip(), tahun, bulan);
+//            int gakAbsen = hariKerja - izinList.size();
+//            potong[0][0] = 0;
+//            potong[0][1] = 0;
+//            potong[0][2] = 0;
+//            potong[0][3] = gakAbsen;
+//            potong[1][0] = 0;
+//            potong[1][1] = 0;
+//            potong[1][2] = 0;
+//            potong[1][3] = gakAbsen;
+//            persenPotong = gakAbsen * 3;
+//            rekapRemunPegawai = new RekapRemunPegawai();
+//            rekapRemunPegawai.setNip(jabatanBulanan.getNip());
+//            rekapRemunPegawai.setNama(jabatanBulanan.getNama());
+//            rekapRemunPegawai.setUnitRemun(jabatanBulanan.getUnitRemun());
+//            rekapRemunPegawai.setGolongan(jabatanBulanan.getGolongan());
+//            rekapRemunPegawai.setGrade(jabatanBulanan.getGrade());
+//            rekapRemunPegawai.setRemunGrade(jabatanBulanan.getRemunGrade());
+//            rekapRemunPegawai.setNamaJabatan(jabatanBulanan.getJabatan());
+//            rekapRemunPegawai.setImplementasiRemunPersen(jabatanBulanan.getImplementasiRemun());
+//            rekapRemunPegawai.setImplementasiRemun(jabatanBulanan.getRemunGrade() * jabatanBulanan.getImplementasiRemun() / 100);
+//            rekapRemunPegawai.setPersenPotongan(persenPotong);
+//            rekapRemunPegawai.setRemunP1((int) Math.round(0.3 * rekapRemunPegawai.getImplementasiRemun()));
+//            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//            rekapRemunPegawai.setPersenPajak(null != jabatanBulanan.getPajak() ? jabatanBulanan.getPajak() : 0);
+//            rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//            rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//            rekapRemunPegawai.setTahun(tahun);
+//            rekapRemunPegawai.setBulan(bulan);
+//            insertRemonVO(rekapRemunPegawai, potong);
+//        } else {
+//            var pemutihanList = pemutihanService.findByBulanAndTahun(bulan, tahun);
+//            int tanggal = 1;
+//            int j = 0;
+//            KehadiranVO kehadiranVO = null;
+//            KehadiranVO nextHadirVO = null;
+//            outerTgl:
+//            while (tanggal <= lengthOfMonth) {
+//                if (jabatanBulanan.getNip().equals("198812072018032001")) {
+//                    System.out.println(jabatanBulanan.getNama());
+//                }
+//                if (tanggal == 1) {
+//                    if (null != rekapRemunPegawai) {
+//                        if (null != rekapRemunPegawai.getRemunP1()) {
+//                            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//                            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//                            if (null != rekapRemunPegawai.getPersenPajak()) {
+//                                rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//                                rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//                            }
 //                        }
-                            rekapRemunPegawai.setPersenPajak(null != jabatanBulanan.getPajak() ? jabatanBulanan.getPajak() : 0);
-                            var izinList = izinService.findByNipAndTahunAndBulan(kehadiranVO.getIdPegawai(), tahun, bulan);
-                            int izinSize = izinList.size();
-                            potong[0][3] -= izinSize;
-                            potong[1][3] -= izinSize;
-                            persenPotong -= izinSize * 3;
-                            if (izinSize > 0 && !pemutihanList.isEmpty()) {
-                                for (Pemutihan putih : pemutihanList) {
-                                    for (Izin izin : izinList) {
-                                        if (putih.getTanggal().isEqual(izin.getTanggal())) {
-                                            if (GlobalConstants.STATUS_DATANG.equals(putih.getStatus())) {
-                                                potong[0][3]++;
-                                            } else {
-                                                potong[1][3]++;
-                                            }
-                                            persenPotong += 1.5;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-                        if (!loopingDate.isEqual(kehadiranVO.getWaktu().toLocalDate())) {    // gak absen datang, gak absen pulang
-                            if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
-                                potong[0][3]++;
-                                persenPotong += 1.5;
-                            }
-                            if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
-                                potong[1][3]++;
-                                persenPotong += 1.5;
-                            }
-                            if (tanggal == lengthOfMonth) {
-                                rekapRemunPegawai.setPersenPotongan(persenPotong);
-                                if (j == hadirList.size() - 1) {
-                                    if (null != rekapRemunPegawai.getRemunP1()) {
-                                        rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-                                        rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-                                        if (null != rekapRemunPegawai.getPersenPajak()) {
-                                            rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-                                            rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-                                        }
-                                    }
-                                }
-                                insertRemonVO(rekapRemunPegawai, potong);
-                                if (j == hadirList.size() - 1) break outerTgl;
-                                j++;
-                                tanggal = 1;
-                            } else {
-                                if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
-                                    assert nextHadirVO != null;
-                                    if (nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1
-                                            && loopingDate.isAfter(kehadiranVO.getWaktu().toLocalDate())) {
-                                        j++;
-                                    }
-                                }
-                                tanggal++;
-                            }
-                            continue outerTgl;
-                        } else {
-                            if (k == 0) {
-                                if (GlobalConstants.STATUS_PULANG.equals(kehadiranVO.getStatus())) {    // gak absen datang
-                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
-                                        potong[0][3]++;
-                                        persenPotong += 1.5;
-                                    }
-                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
-                                        persenPotong += potongRemon(kehadiranVO, potong);
-                                    }
-                                    if (tanggal == lengthOfMonth) {
-                                        rekapRemunPegawai.setPersenPotongan(persenPotong);
-                                        if (j == hadirList.size() - 1) {
-                                            if (null != rekapRemunPegawai.getRemunP1()) {
-                                                rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-                                                rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-                                                if (null != rekapRemunPegawai.getPersenPajak()) {
-                                                    rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-                                                    rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-                                                }
-                                            }
-                                        }
-                                        insertRemonVO(rekapRemunPegawai, potong);
-                                        if (j == hadirList.size() - 1) break outerTgl;
-                                        j++;
-                                        tanggal = 1;
-                                    } else {
-                                        if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
-                                            assert nextHadirVO != null;
-                                            if (nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1) {
-                                                j++;
-                                            }
-                                        }
-                                        tanggal++;
-                                    }
-                                    continue outerTgl;
-                                } else if (j == hadirList.size() - 1
-                                        || isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)
-                                        || (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)
-                                        && Objects.requireNonNull(nextHadirVO).getWaktu().toLocalDate().isAfter(loopingDate))) {    // gak absen pulang
-                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
-                                        potong[1][3]++;
-                                        persenPotong += 1.5;
-                                    }
-                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
-                                        persenPotong += potongRemon(kehadiranVO, potong);
-                                    }
-                                    if (tanggal == lengthOfMonth) {
-                                        rekapRemunPegawai.setPersenPotongan(persenPotong);
-                                        if (null != rekapRemunPegawai.getRemunP1()) {
-                                            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-                                            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-                                            if (null != rekapRemunPegawai.getPersenPajak()) {
-                                                rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-                                                rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-                                            }
-                                        }
-                                        insertRemonVO(rekapRemunPegawai, potong);
-                                        if (j == hadirList.size() - 1) break outerTgl;
-                                        j++;
-                                        tanggal = 1;
-                                    } else {
-                                        if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
-                                            assert nextHadirVO != null;
-                                            if (nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1) {
-                                                j++;
-                                            }
-                                        }
-                                        tanggal++;
-                                    }
-                                    continue outerTgl;
-                                } else {
-                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
-                                        persenPotong += potongRemon(kehadiranVO, potong);
-                                    }
-                                    j++;
-                                    continue outerStatus;
-                                }
-                            }
-                            if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
-                                persenPotong += potongRemon(kehadiranVO, potong);
-                            }
-                            if (tanggal == lengthOfMonth
-                                    || (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)
-                                    && Objects.requireNonNull(nextHadirVO).getWaktu().getDayOfMonth() == tanggal + 1)) {
-                                j++;
-                            }
-                            continue outerStatus;
-                        }
-                    }
-                }
-                if (tanggal == lengthOfMonth) {
-//                    if (jabatanBulanan.getNip().equals("198812072018032001")) {
-//                        System.out.println(jabatanBulanan.getNama());
 //                    }
-                    rekapRemunPegawai.setPersenPotongan(persenPotong);
-                    insertRemonVO(rekapRemunPegawai, potong);
-                    if (j == hadirList.size()) {
-                        if (null != rekapRemunPegawai.getRemunP1()) {
-                            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
-                            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
-                            if (null != rekapRemunPegawai.getPersenPajak()) {
-                                rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
-                                rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
-                            }
-                        }
-                        break;
-                    }
-                    tanggal = 1;
-                } else {
-                    tanggal++;
-                }
-            }
-        }
+//                    rekapRemunPegawai = new RekapRemunPegawai();
+//                    potong[0][0] = 0;
+//                    potong[0][1] = 0;
+//                    potong[0][2] = 0;
+//                    potong[0][3] = 0;
+//                    potong[1][0] = 0;
+//                    potong[1][1] = 0;
+//                    potong[1][2] = 0;
+//                    potong[1][3] = 0;
+//                    persenPotong = 0;
+//                }
+//                LocalDate loopingDate = LocalDate.of(tahun, bulan, tanggal);
+//                if (hariLibur.contains(loopingDate)) {
+//                    if (null == kehadiranVO) {
+//                        tanggal++;
+//                    } else if (tanggal == lengthOfMonth) {
+//                        rekapRemunPegawai.setPersenPotongan(persenPotong);
+//                        if (j == hadirList.size() - 1) {
+//                            if (null != rekapRemunPegawai.getRemunP1()) {
+//                                rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//                                rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//                                if (null != rekapRemunPegawai.getPersenPajak()) {
+//                                    rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//                                    rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//                                }
+//                            }
+//                        }
+//                        insertRemonVO(rekapRemunPegawai, potong);
+//                        if (j == hadirList.size() - 1) break;
+//                        j++;
+//                        tanggal = 1;
+//                    } else {
+//                        if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
+//                            assert nextHadirVO != null;
+//                            if (kehadiranVO.getWaktu().getDayOfMonth() != tanggal + 1 && nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1) {
+//                                j++;
+//                            }
+//                        }
+//                        tanggal++;
+//                    }
+//                    continue;
+//                }
+//
+//                outerStatus:
+//                for (int k = 0; k < 2; k++) {
+//                    while (j < hadirList.size()) {
+//                        kehadiranVO = hadirList.get(j);
+////                    if (kehadiranVO.getWaktu().toLocalDate().toString().equals("2023-05-26")) {
+////                        System.out.println(kehadiranVO.getNamaPegawai());
+////                    }
+//                        if (j < hadirList.size() - 1) {
+//                            nextHadirVO = hadirList.get(j + 1);
+//                        }
+//                        if (isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO) &&
+//                                !kehadiranVO.getIdPegawai().equals(rekapRemunPegawai.getNip())) {    // sebelum ke pegawai selanjutnya
+////						if (null == kehadiranVO.getGradePegawai()) {
+////							System.out.println(kehadiranVO.getNamaPegawai());
+////                            System.out.println(kehadiranVO.getWaktu());
+////                            System.out.println(kehadiranVO.getStatus());
+////						}
+//                            rekapRemunPegawai.setNip(kehadiranVO.getIdPegawai());
+//                            rekapRemunPegawai.setNama(kehadiranVO.getNamaPegawai());
+//                            rekapRemunPegawai.setUnitRemun(jabatanBulanan.getUnitRemun());
+//                            rekapRemunPegawai.setGolongan(jabatanBulanan.getGolongan());
+//                            rekapRemunPegawai.setTahun(tahun);
+//                            rekapRemunPegawai.setBulan(bulan);
+////                            remonVO.setJenisJabatan(jabatanBulanan.getJenisJabatan());
+//                            rekapRemunPegawai.setGrade(jabatanBulanan.getGrade());
+//                            rekapRemunPegawai.setRemunGrade(jabatanBulanan.getRemunGrade());
+//                            rekapRemunPegawai.setNamaJabatan(jabatanBulanan.getJabatan());
+//                            rekapRemunPegawai.setImplementasiRemunPersen(jabatanBulanan.getImplementasiRemun());
+//                            rekapRemunPegawai.setImplementasiRemun(jabatanBulanan.getRemunGrade() * jabatanBulanan.getImplementasiRemun() / 100);
+//                            rekapRemunPegawai.setRemunP1((int) Math.round(0.3 * rekapRemunPegawai.getImplementasiRemun()));
+////                        }
+//                            rekapRemunPegawai.setPersenPajak(null != jabatanBulanan.getPajak() ? jabatanBulanan.getPajak() : 0);
+//                            var izinList = izinService.findByNipAndTahunAndBulan(kehadiranVO.getIdPegawai(), tahun, bulan);
+//                            int izinSize = izinList.size();
+//                            potong[0][3] -= izinSize;
+//                            potong[1][3] -= izinSize;
+//                            persenPotong -= izinSize * 3;
+//                            if (izinSize > 0 && !pemutihanList.isEmpty()) {
+//                                for (Pemutihan putih : pemutihanList) {
+//                                    for (Izin izin : izinList) {
+//                                        if (putih.getTanggal().isEqual(izin.getTanggal())) {
+//                                            if (GlobalConstants.STATUS_DATANG.equals(putih.getStatus())) {
+//                                                potong[0][3]++;
+//                                            } else {
+//                                                potong[1][3]++;
+//                                            }
+//                                            persenPotong += 1.5;
+//                                            break;
+//                                        }
+//                                    }
+//                                }
+//                            }
+//
+//                        }
+//                        if (!loopingDate.isEqual(kehadiranVO.getWaktu().toLocalDate())) {    // gak absen datang, gak absen pulang
+//                            if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
+//                                potong[0][3]++;
+//                                persenPotong += 1.5;
+//                            }
+//                            if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
+//                                potong[1][3]++;
+//                                persenPotong += 1.5;
+//                            }
+//                            if (tanggal == lengthOfMonth) {
+//                                rekapRemunPegawai.setPersenPotongan(persenPotong);
+//                                if (j == hadirList.size() - 1) {
+//                                    if (null != rekapRemunPegawai.getRemunP1()) {
+//                                        rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//                                        rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//                                        if (null != rekapRemunPegawai.getPersenPajak()) {
+//                                            rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//                                            rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//                                        }
+//                                    }
+//                                }
+//                                insertRemonVO(rekapRemunPegawai, potong);
+//                                if (j == hadirList.size() - 1) break outerTgl;
+//                                j++;
+//                                tanggal = 1;
+//                            } else {
+//                                if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
+//                                    assert nextHadirVO != null;
+//                                    if (nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1
+//                                            && loopingDate.isAfter(kehadiranVO.getWaktu().toLocalDate())) {
+//                                        j++;
+//                                    }
+//                                }
+//                                tanggal++;
+//                            }
+//                            continue outerTgl;
+//                        } else {
+//                            if (k == 0) {
+//                                if (GlobalConstants.STATUS_PULANG.equals(kehadiranVO.getStatus())) {    // gak absen datang
+//                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
+//                                        potong[0][3]++;
+//                                        persenPotong += 1.5;
+//                                    }
+//                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
+//                                        persenPotong += potongRemon(kehadiranVO, potong);
+//                                    }
+//                                    if (tanggal == lengthOfMonth) {
+//                                        rekapRemunPegawai.setPersenPotongan(persenPotong);
+//                                        if (j == hadirList.size() - 1) {
+//                                            if (null != rekapRemunPegawai.getRemunP1()) {
+//                                                rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//                                                rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//                                                if (null != rekapRemunPegawai.getPersenPajak()) {
+//                                                    rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//                                                    rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//                                                }
+//                                            }
+//                                        }
+//                                        insertRemonVO(rekapRemunPegawai, potong);
+//                                        if (j == hadirList.size() - 1) break outerTgl;
+//                                        j++;
+//                                        tanggal = 1;
+//                                    } else {
+//                                        if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
+//                                            assert nextHadirVO != null;
+//                                            if (nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1) {
+//                                                j++;
+//                                            }
+//                                        }
+//                                        tanggal++;
+//                                    }
+//                                    continue outerTgl;
+//                                } else if (j == hadirList.size() - 1
+//                                        || isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)
+//                                        || (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)
+//                                        && Objects.requireNonNull(nextHadirVO).getWaktu().toLocalDate().isAfter(loopingDate))) {    // gak absen pulang
+//                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
+//                                        potong[1][3]++;
+//                                        persenPotong += 1.5;
+//                                    }
+//                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
+//                                        persenPotong += potongRemon(kehadiranVO, potong);
+//                                    }
+//                                    if (tanggal == lengthOfMonth) {
+//                                        rekapRemunPegawai.setPersenPotongan(persenPotong);
+//                                        if (null != rekapRemunPegawai.getRemunP1()) {
+//                                            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//                                            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//                                            if (null != rekapRemunPegawai.getPersenPajak()) {
+//                                                rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//                                                rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//                                            }
+//                                        }
+//                                        insertRemonVO(rekapRemunPegawai, potong);
+//                                        if (j == hadirList.size() - 1) break outerTgl;
+//                                        j++;
+//                                        tanggal = 1;
+//                                    } else {
+//                                        if (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)) {
+//                                            assert nextHadirVO != null;
+//                                            if (nextHadirVO.getWaktu().getDayOfMonth() == tanggal + 1) {
+//                                                j++;
+//                                            }
+//                                        }
+//                                        tanggal++;
+//                                    }
+//                                    continue outerTgl;
+//                                } else {
+//                                    if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_DATANG, pemutihanList)) {
+//                                        persenPotong += potongRemon(kehadiranVO, potong);
+//                                    }
+//                                    j++;
+//                                    continue outerStatus;
+//                                }
+//                            }
+//                            if (isPemutihanInv(loopingDate, GlobalConstants.STATUS_PULANG, pemutihanList)) {
+//                                persenPotong += potongRemon(kehadiranVO, potong);
+//                            }
+//                            if (tanggal == lengthOfMonth
+//                                    || (!isNextPegawai(j, hadirList.size(), kehadiranVO.getIdPegawai(), nextHadirVO)
+//                                    && Objects.requireNonNull(nextHadirVO).getWaktu().getDayOfMonth() == tanggal + 1)) {
+//                                j++;
+//                            }
+//                            continue outerStatus;
+//                        }
+//                    }
+//                }
+//                if (tanggal == lengthOfMonth) {
+////                    if (jabatanBulanan.getNip().equals("198812072018032001")) {
+////                        System.out.println(jabatanBulanan.getNama());
+////                    }
+//                    rekapRemunPegawai.setPersenPotongan(persenPotong);
+//                    insertRemonVO(rekapRemunPegawai, potong);
+//                    if (j == hadirList.size()) {
+//                        if (null != rekapRemunPegawai.getRemunP1()) {
+//                            rekapRemunPegawai.setRupiahPotongan((int) Math.round(rekapRemunPegawai.getRemunP1() * persenPotong / 100));
+//                            rekapRemunPegawai.setSetelahPotongan(rekapRemunPegawai.getRemunP1() - rekapRemunPegawai.getRupiahPotongan());
+//                            if (null != rekapRemunPegawai.getPersenPajak()) {
+//                                rekapRemunPegawai.setRupiahPajak(rekapRemunPegawai.getSetelahPotongan() * rekapRemunPegawai.getPersenPajak() / 100);
+//                                rekapRemunPegawai.setNetto(rekapRemunPegawai.getSetelahPotongan() - rekapRemunPegawai.getRupiahPajak());
+//                            }
+//                        }
+//                        break;
+//                    }
+//                    tanggal = 1;
+//                } else {
+//                    tanggal++;
+//                }
+//            }
+//        }
+//
+//        return rekapRemunPegawai;
+//    }
 
-        return rekapRemunPegawai;
-    }
-
-    private void insertRemonVO (RekapRemunPegawai rekapRemunPegawai,int[][] potong){
-        rekapRemunPegawai.setD1(potong[0][0]);
-        rekapRemunPegawai.setD2(potong[0][1]);
-        rekapRemunPegawai.setD3(potong[0][2]);
-        rekapRemunPegawai.setD4(potong[0][3]);
-        rekapRemunPegawai.setP1(potong[1][0]);
-        rekapRemunPegawai.setP2(potong[1][1]);
-        rekapRemunPegawai.setP3(potong[1][2]);
-        rekapRemunPegawai.setP4(potong[1][3]);
-    }
+//    private void insertRemonVO (RekapRemunPegawai rekapRemunPegawai,int[][] potong){
+//        rekapRemunPegawai.setD1(potong[0][0]);
+//        rekapRemunPegawai.setD2(potong[0][1]);
+//        rekapRemunPegawai.setD3(potong[0][2]);
+//        rekapRemunPegawai.setD4(potong[0][3]);
+//        rekapRemunPegawai.setP1(potong[1][0]);
+//        rekapRemunPegawai.setP2(potong[1][1]);
+//        rekapRemunPegawai.setP3(potong[1][2]);
+//        rekapRemunPegawai.setP4(potong[1][3]);
+//    }
 
     private boolean isNextPegawai ( int j, int hadirListSize, String currentIdPegawai, KehadiranVO nextHehadiranVO){
         boolean result = false;

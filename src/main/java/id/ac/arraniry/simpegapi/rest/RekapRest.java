@@ -4,7 +4,6 @@ import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.service.*;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import net.sf.jasperreports.engine.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.File;
@@ -43,7 +41,7 @@ public class RekapRest {
 
     @Operation(summary = "Melihat remun detail bulanan pegawai")
     @GetMapping("/remun-pegawai/{id}")
-    public RemunPegawaiVO getRemunByNipDetail(@PathVariable String id) {
+    public RemunPegawaiVO getDetailRemunPegawai(@PathVariable String id) {
         return rekapService.getRemunByNipDetail(id);
     }
 
@@ -72,16 +70,21 @@ public class RekapRest {
     }
 
     @GetMapping("/remun")
-    public Rekap getRemun(@RequestParam Integer tahun, @RequestParam Integer bulan, @RequestParam(required = false) String unitRemunId) {
-        return rekapService.findByJenisRekapAndTahunAndBulanAndUnitRemun("remun", tahun, bulan, unitRemunId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "remun tidak ditemukan"));
+    public List<Rekap> getRemun(@RequestParam Integer tahun, @RequestParam(required = false) String unitRemunId) {
+//        return rekapService.findByJenisRekapAndTahunAndBulanAndUnitRemun("remun", tahun, bulan, unitRemunId)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "remun tidak ditemukan"));
+        if (unitRemunId == null || unitRemunId.isEmpty()) {
+            return rekapService.findByJenisRekapAndTahun("remun", tahun);
+        } else {
+            return rekapService.findByJenisRekapAndTahunAndKodeAnakSatker("remun", tahun, unitRemunId);
+        }
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void generateRekap(@Valid @RequestBody UangMakanCreateRequest request) {
-        rekapService.processRekap(request);
-    }
+//    @PostMapping
+//    @ResponseStatus(HttpStatus.NO_CONTENT)
+//    public void generateRekap(@Valid @RequestBody UangMakanCreateRequest request) {
+//        rekapService.processRekap(request);
+//    }
 
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> download(@RequestParam("jenisRekap") String jenisRekap, @RequestParam("fileType") String fileType,
@@ -96,11 +99,11 @@ public class RekapRest {
                 .body(responseBody);
     }
 
-    @GetMapping("/stream-generate")
-    public SseEmitter streamGenerate(@RequestParam Integer tahun, @RequestParam Integer bulan, @RequestParam(required = false) String unitGajiId,
-                                     @RequestParam String jenisRekap, @RequestParam(required = false) String unitRemunId) {
-        return rekapService.streamGenerate(tahun, bulan, unitGajiId, jenisRekap, unitRemunId);
-    }
+//    @GetMapping("/stream-generate")
+//    public SseEmitter streamGenerate(@RequestParam Integer tahun, @RequestParam Integer bulan, @RequestParam(required = false) String unitGajiId,
+//                                     @RequestParam String jenisRekap, @RequestParam(required = false) String unitRemunId) {
+//        return rekapService.streamGenerate(tahun, bulan, unitGajiId, jenisRekap, unitRemunId);
+//    }
 
     @GetMapping("/gaji-pegawai/{id}")
     public Gaji getDetailGajiPegawai(@PathVariable String id) {
@@ -110,7 +113,7 @@ public class RekapRest {
     @Operation(summary = "Meng-upload file gaji")
     @PostMapping("/gaji/upload")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void uploadFile(@RequestParam MultipartFile file, @RequestParam String createdBy) {
+    public void uploadGajiFile(@RequestParam MultipartFile file, @RequestParam String createdBy) {
         rekapService.processGajiFile(file, createdBy);
     }
 
@@ -135,6 +138,31 @@ public class RekapRest {
     @GetMapping("/potongan-gaji-pegawai/{id}")
     public PotonganUnitGaji getDetailPotonganGajiPegawai(@PathVariable String id) {
         return potonganUnitGajiService.findById(id);
+    }
+
+    @Operation(summary = "Meng-upload file remun")
+    @PostMapping("/remun/upload")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void uploadRemunFile(@RequestParam MultipartFile file, @RequestParam String createdBy) {
+        rekapService.processRemunFile(file, createdBy);
+    }
+
+    @DeleteMapping("/{id}/remun")
+    public void deleteRemun(@PathVariable String id) {
+        rekapService.deleteRemun(id);
+    }
+
+    @Operation(summary = "Meng-upload file selisih remun")
+    @PostMapping("/selisih-remun/upload")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void uploadSelisihRemunFile(@RequestParam MultipartFile file, @RequestParam String createdBy, @RequestParam Integer tahun,
+                                       @RequestParam Integer bulan, @RequestParam String unitRemunId) {
+        rekapService.processSelisihRemunFile(file, createdBy, tahun, bulan, unitRemunId);
+    }
+
+    @DeleteMapping("/{id}/selisih-remun")
+    public void deleteSelisihRemun(@PathVariable String id) {
+        rekapService.deleteSelisihRemun(id);
     }
 
 }

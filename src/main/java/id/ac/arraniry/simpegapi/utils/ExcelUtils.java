@@ -165,9 +165,10 @@ public class ExcelUtils {
 
         // Ambil data Unit Gaji dari GraphQL
         UnitGajiVO unitGajiVO = getUnitGajiFromGraphQL(unitGajiId, environment);
-        
+
         ExcelConfig config = getExcelConfig(unitGajiId);
         List<PotonganUnitGaji> list = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = WorkbookFactory.create(is)) {
@@ -190,10 +191,35 @@ public class ExcelUtils {
                 Cell noCell = row.getCell(config.noColumn);
                 if (!isValidNoCell(noCell)) break;
 
+                // Ambil nomor urut dari kolom NO
+                String noUrut = getString(row, config.noColumn, evaluator);
+
+                // Validasi field wajib
+                String nip = getString(row, config.nipColumn, evaluator);
+                BigDecimal gajiBersih = getBigDecimal(row, config.gajiBersihColumn, evaluator);
+                BigDecimal thp = getBigDecimal(row, config.thpColumn, evaluator);
+
+                List<String> rowErrors = new ArrayList<>();
+                if (nip == null || nip.trim().isEmpty()) {
+                    rowErrors.add("NIP kosong");
+                }
+                if (gajiBersih == null || gajiBersih.compareTo(BigDecimal.ZERO) == 0) {
+                    rowErrors.add("Gaji Bersih kosong atau 0");
+                }
+                if (thp == null || thp.compareTo(BigDecimal.ZERO) == 0) {
+                    rowErrors.add("THP kosong atau 0");
+                }
+
+                if (!rowErrors.isEmpty()) {
+                    String errorMsg = "No. " + noUrut + ": " + String.join(", ", rowErrors);
+                    errorMessages.add(errorMsg);
+                    continue; // Skip baris ini, lanjut ke baris berikutnya
+                }
+
                 PotonganUnitGaji potonganUnitGaji = new PotonganUnitGaji();
-                potonganUnitGaji.setNip(getString(row, config.nipColumn, evaluator));
+                potonganUnitGaji.setNip(nip);
                 potonganUnitGaji.setNama(getString(row, config.namaColumn, evaluator));
-                potonganUnitGaji.setGajiBersih(getBigDecimal(row, config.gajiBersihColumn, evaluator));
+                potonganUnitGaji.setGajiBersih(gajiBersih);
 
                 // Potongan: kolom dinamis
                 List<PotonganUnitGajiItem> potonganList = new ArrayList<>();
@@ -207,7 +233,7 @@ public class ExcelUtils {
 
                 // Jumlah Potongan dan THP
                 potonganUnitGaji.setJumlahPotongan(getBigDecimal(row, config.jumlahPotonganColumn, evaluator));
-                potonganUnitGaji.setThp(getBigDecimal(row, config.thpColumn, evaluator));
+                potonganUnitGaji.setThp(thp);
 
                 potonganUnitGaji.setUnitGajiId(unitGajiId);
                 potonganUnitGaji.setUnitGajiNama(unitGajiVO.getNama()); // Simpan nama dari GraphQL
@@ -220,6 +246,14 @@ public class ExcelUtils {
 
                 list.add(potonganUnitGaji);
             }
+
+            // Jika ada error, throw exception dengan semua error message
+            if (!errorMessages.isEmpty()) {
+                String allErrors = String.join("; ", errorMessages);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Validasi gagal: " + allErrors);
+            }
+
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Error membaca file XLSX: " + e.getMessage());

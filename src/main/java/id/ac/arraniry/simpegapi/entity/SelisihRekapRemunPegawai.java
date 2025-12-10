@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-public class RekapRemunPegawai {
+public class SelisihRekapRemunPegawai {
     @Id
     private String id;
 
@@ -15,7 +15,6 @@ public class RekapRemunPegawai {
     private String jenisJabatan;    // DS / DT / Manejerial / Pelaksana / JF
     private String unitRemun;       // kolom B
     private Integer bulan;           // kolom C
-    private Integer no;             // kolom D (jika diperlukan)
     private String nip;             // kolom E
     private String nama;            // kolom F
     private String jabatan;         // kolom G
@@ -66,6 +65,7 @@ public class RekapRemunPegawai {
     private BigDecimal netto;
 
     private Integer tahun;
+    private String periode;
     private String rekapId;
     private String createdBy;
     private LocalDateTime createdDate;

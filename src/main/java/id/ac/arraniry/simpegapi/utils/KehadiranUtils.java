@@ -120,7 +120,7 @@ public class KehadiranUtils {
             JsonNode actualObj = mapper.readTree(response.getBody());
             JsonNode pegawai = actualObj.get("data").get("pegawai");
             if(pegawai.isNull())
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pegawai tidak ditemukan!");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pegawai " + idPegawai + " tidak ditemukan!");
             PegawaiSimpegVO pegawaiProfilVO = new ObjectMapper().readValue(pegawai.toString(), PegawaiSimpegVO.class);
 //            log.debug(pegawaiProfilVO.toString());
             if(pegawaiProfilVO.getStatusAktif().getId() > 1)

@@ -21,4 +21,5 @@ public class Rekap {
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
     private Integer progress;
+    private String errorMessages;
 }
