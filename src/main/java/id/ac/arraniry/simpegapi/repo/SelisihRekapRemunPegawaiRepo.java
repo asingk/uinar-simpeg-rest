@@ -13,4 +13,5 @@ public interface SelisihRekapRemunPegawaiRepo extends MongoRepository<SelisihRek
     List<SelisihRekapRemunPegawai> findByTahunAndBulanAndUnitRemun(Integer tahun, Integer bulan, String unitRemun, Sort sort);
     List<SelisihRekapRemunPegawai> findByTahunAndBulan(Integer tahun, Integer bulan, Sort sort);
     void deleteByRekapId(String rekapId);
+    List<SelisihRekapRemunPegawai> findByRekapId(String rekapId);
 }

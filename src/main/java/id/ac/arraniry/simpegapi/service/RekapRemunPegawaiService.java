@@ -18,4 +18,7 @@ public interface RekapRemunPegawaiService {
     void saveAllSelisih(List<SelisihRekapRemunPegawai> selisihRemunPegawaiList);
     List<RekapRemunPegawai> findRemunPegawai(String nip, Integer tahun, Integer bulan);
     List<SelisihRekapRemunPegawai> findSelisihRemunPegawai(String idPegawai, Integer tahun, Integer bulan);
+    List<RekapRemunPegawai> findByRekapId(String rekapId);
+    List<SelisihRekapRemunPegawai> findByRekapIdSelisih(String rekapId);
+    SelisihRekapRemunPegawai findSelisihRemunPegawaiById(String id);
 }

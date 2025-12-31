@@ -92,4 +92,19 @@ public class RekapRemunPegawaiServiceImpl implements RekapRemunPegawaiService {
         }
         return result;
     }
+
+    @Override
+    public List<RekapRemunPegawai> findByRekapId(String rekapId) {
+        return rekapRemunPegawaiRepo.findByRekapId(rekapId);
+    }
+
+    @Override
+    public List<SelisihRekapRemunPegawai> findByRekapIdSelisih(String rekapId) {
+        return selisihRekapRemunPegawaiRepo.findByRekapId(rekapId);
+    }
+
+    @Override
+    public SelisihRekapRemunPegawai findSelisihRemunPegawaiById(String id) {
+        return selisihRekapRemunPegawaiRepo.findById(id).orElseThrow(() -> new RuntimeException("Selisih Remun Pegawai not found"));
+    }
 }

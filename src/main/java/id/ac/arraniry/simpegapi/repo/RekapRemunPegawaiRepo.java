@@ -14,4 +14,5 @@ public interface RekapRemunPegawaiRepo extends MongoRepository<RekapRemunPegawai
     List<RekapRemunPegawai> findByTahunAndBulanAndUnitRemun(Integer tahun, Integer bulan, String unitRemun, Sort sort);
     List<RekapRemunPegawai> findByTahunAndBulan(Integer tahun, Integer bulan, Sort sort);
     void deleteByRekapId(String rekapId);
+    List<RekapRemunPegawai> findByRekapId(String rekapId);
 }

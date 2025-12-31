@@ -1,8 +1,8 @@
 package id.ac.arraniry.simpegapi.service;
 
-import id.ac.arraniry.simpegapi.dto.RemunPegawaiVO;
 import id.ac.arraniry.simpegapi.dto.UangMakanPegawaiVO;
 import id.ac.arraniry.simpegapi.entity.Rekap;
+import id.ac.arraniry.simpegapi.entity.RekapRemunPegawai;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,10 +19,11 @@ public interface RekapService {
     void processGajiFile(MultipartFile file, String createdBy);
     List<Rekap> findByJenisRekapAndTahunAndKodeAnakSatker(String jenisRekap, Integer tahun, String kodeAnakSatker);
     List<Rekap> findByJenisRekapAndTahunAndUnitGajiId(String jenisRekap, Integer tahun, String unitGajiId);
+    List<Rekap> findByJenisRekapAndTahunAndUnitRemunId(String jenisRekap, Integer tahun, String unitGajiId);
 //    void processRekap(UangMakanCreateRequest request);
 //    SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId);
     UangMakanPegawaiVO getUangMakanByNipDetail(String id);
-    RemunPegawaiVO getRemunByNipDetail(String id);
+    RekapRemunPegawai getRemunByNipDetail(String id);
     File generateFile(String jenisRekap, String fileType, String unitGaji, String unitRemun, Integer tahun, Integer bulan)
             throws JRException, FileNotFoundException;
     void processPotonganGajiFile(MultipartFile file, String createdBy, String unitGajiId, Integer tahun, Integer bulan);

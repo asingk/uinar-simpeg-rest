@@ -32,7 +32,7 @@ public class SelisihRekapRemunPegawai {
 
     private BigDecimal iku;              // DT/Manejerial (L)
     private BigDecimal pembayaranIku;    // DT/Manejerial (M)
-    private BigDecimal pembayaranBkd;    // DT (O)
+    private BigDecimal pembayaranBkdDt;    // DT (O)
     private BigDecimal lkh;              // Pelaksana (L)
     private BigDecimal pembayaranLkh;    // Pelaksana (M)
     private BigDecimal progress;         // JF (L)
@@ -47,7 +47,8 @@ public class SelisihRekapRemunPegawai {
     private Float capaianBkr;               // S (DS)
     private BigDecimal pembayaranBkr;         // T (DS)
     private Float capaianBkd;               // U (DS) or X/Y (DT)
-    private BigDecimal pembayaranBkdSelisih;  // V / Y (DS/DT)
+    private BigDecimal pembayaranBkdDs;  // V / Y (DS)
+    private BigDecimal penguranganBkdDt;  // V / Y (DT)
     private Float capaianIku;               // U (DT/Manejerial)
     private Float kelebihanKekuranganIku;   // V (DT/Manejerial)
     private BigDecimal pembayaranKelebihanKekuranganIku; // W (DT) / U (Manejerial)

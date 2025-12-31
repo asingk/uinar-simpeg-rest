@@ -29,6 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -134,6 +135,11 @@ public class RekapServiceImpl implements RekapService {
         return rekapRepo.findByJenisRekapAndTahunAndUnitGajiId(jenisRekap, tahun, unitGajiId, Sort.by(Sort.Direction.DESC, "bulan"));
     }
 
+    @Override
+    public List<Rekap> findByJenisRekapAndTahunAndUnitRemunId(String jenisRekap, Integer tahun, String unitRemunId) {
+        return rekapRepo.findByJenisRekapAndTahunAndUnitRemunId(jenisRekap, tahun, unitRemunId, Sort.by(Sort.Direction.DESC, "bulan"));
+    }
+
 //    @Override
 //    public void processRekap(UangMakanCreateRequest request) {
 //        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy());
@@ -212,8 +218,8 @@ public class RekapServiceImpl implements RekapService {
     }
 
     @Override
-    public RemunPegawaiVO getRemunByNipDetail(String id) {
-        RemunPegawaiVO result = new RemunPegawaiVO();
+    public RekapRemunPegawai getRemunByNipDetail(String id) {
+        RekapRemunPegawai result = new RekapRemunPegawai();
 //        Optional<RekapRemunPegawai> opt = rekapRemunPegawaiService.findById(id);
 //        if (opt.isPresent()) {
 //            RekapRemunPegawai rekapRemunPegawai = opt.get();
@@ -451,7 +457,7 @@ public class RekapServiceImpl implements RekapService {
             rekapRemunPegawaiService.deleteSelisihByRekapId(rekapId);
 
             // Read and save all employee data
-            List<SelisihRekapRemunPegawai> allData = readSelisihRemunExcelFile(file, rekapId, tahun, bulan, pegawaiSimpegVO.getNama(), now);
+            List<SelisihRekapRemunPegawai> allData = readSelisihRemunExcelFile(file, rekapId, tahun, bulan, pegawaiSimpegVO.getNama(), now, unitRemunId);
             rekapRemunPegawaiService.saveAllSelisih(allData);
 
         } catch (IOException e) {
@@ -748,7 +754,7 @@ public class RekapServiceImpl implements RekapService {
             if (value != null && !value.trim().isEmpty()) {
                 String cleanValue = value.replaceAll("[^0-9.]", "");
                 if (!cleanValue.isEmpty()) {
-                    return new BigDecimal(cleanValue);
+                    return new BigDecimal(cleanValue).setScale(0, RoundingMode.HALF_UP);
                 }
             }
         } catch (Exception e) {
@@ -977,7 +983,7 @@ public class RekapServiceImpl implements RekapService {
     }
 
     private List<SelisihRekapRemunPegawai> readSelisihRemunExcelFile(MultipartFile file, String rekapId, Integer tahun, Integer bulan, String createdBy,
-                                                                     LocalDateTime now) throws IOException {
+                                                                     LocalDateTime now, String unitRemunId) throws IOException {
         List<SelisihRekapRemunPegawai> allData = new ArrayList<>();
 
         try (InputStream is = file.getInputStream();
@@ -991,11 +997,8 @@ public class RekapServiceImpl implements RekapService {
                     // Parse periode from D4
                     String periodeInfo = parsePeriodeSelisih(sheet);
 
-                    // Get unit from specific cell per sheet
-                    String unitRemun = getUnitRemun(sheet, sheetName);
-
                     List<SelisihRekapRemunPegawai> sheetData = readSelisihSheetByType(
-                            sheet, sheetName, rekapId, tahun, bulan, unitRemun, createdBy, periodeInfo, now
+                            sheet, sheetName, rekapId, tahun, bulan, unitRemunId, createdBy, periodeInfo, now
                     );
                     allData.addAll(sheetData);
                 }
@@ -1105,7 +1108,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             RekapRemunPegawai rekap = new RekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("DS");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1167,7 +1169,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             RekapRemunPegawai rekap = new RekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("DT");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1232,7 +1233,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             RekapRemunPegawai rekap = new RekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("Manejerial");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1293,7 +1293,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             RekapRemunPegawai rekap = new RekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("Pelaksana");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1354,7 +1353,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             RekapRemunPegawai rekap = new RekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("JF");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1429,7 +1427,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             SelisihRekapRemunPegawai rekap = new SelisihRekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("DS");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1461,7 +1458,7 @@ public class RekapServiceImpl implements RekapService {
             rekap.setCapaianBkr(getCellValueAsFloat(row.getCell(18)));
             rekap.setPembayaranBkr(getCellValueAsBigDecimal(row.getCell(19)));
             rekap.setCapaianBkd(getCellValueAsFloat(row.getCell(20)));
-            rekap.setPembayaranBkdSelisih(getCellValueAsBigDecimal(row.getCell(21)));
+            rekap.setPembayaranBkdDs(getCellValueAsBigDecimal(row.getCell(21)));
 
             // Total & Pajak
             rekap.setBruto(getCellValueAsBigDecimal(row.getCell(22)));
@@ -1491,7 +1488,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             SelisihRekapRemunPegawai rekap = new SelisihRekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("DT");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1514,7 +1510,7 @@ public class RekapServiceImpl implements RekapService {
             rekap.setIku(getCellValueAsBigDecimal(row.getCell(11)));
             rekap.setPembayaranIku(getCellValueAsBigDecimal(row.getCell(12)));
             rekap.setBkd(getCellValueAsBigDecimal(row.getCell(13)));
-            rekap.setPembayaranBkd(getCellValueAsBigDecimal(row.getCell(14)));
+            rekap.setPembayaranBkdDt(getCellValueAsBigDecimal(row.getCell(14)));
             rekap.setSkp(getCellValueAsBigDecimal(row.getCell(15)));
             rekap.setCapaianSkp(getCellValueAsInteger(row.getCell(16)));
             rekap.setPembayaranSkp(getCellValueAsBigDecimal(row.getCell(17)));
@@ -1526,7 +1522,7 @@ public class RekapServiceImpl implements RekapService {
             rekap.setKelebihanKekuranganIku(getCellValueAsFloat(row.getCell(21)));
             rekap.setPembayaranKelebihanKekuranganIku(getCellValueAsBigDecimal(row.getCell(22)));
             rekap.setCapaianBkd(getCellValueAsFloat(row.getCell(23)));
-            rekap.setPembayaranBkdSelisih(getCellValueAsBigDecimal(row.getCell(24)));
+            rekap.setPenguranganBkdDt(getCellValueAsBigDecimal(row.getCell(24)));
 
             // Total & Pajak
             rekap.setBruto(getCellValueAsBigDecimal(row.getCell(25)));
@@ -1556,7 +1552,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             SelisihRekapRemunPegawai rekap = new SelisihRekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("Manejerial");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1617,7 +1612,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             SelisihRekapRemunPegawai rekap = new SelisihRekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("Pelaksana");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1678,7 +1672,6 @@ public class RekapServiceImpl implements RekapService {
             }
 
             SelisihRekapRemunPegawai rekap = new SelisihRekapRemunPegawai();
-            rekap.setId(UUID.randomUUID().toString());
             rekap.setJenisJabatan("JF");
             rekap.setRekapId(rekapId);
             rekap.setTahun(tahun);
@@ -1806,24 +1799,14 @@ public class RekapServiceImpl implements RekapService {
 
         try {
             switch (cell.getCellType()) {
-                case NUMERIC:
+                case NUMERIC, FORMULA:
                     double numericValue = cell.getNumericCellValue();
-                    // Cek apakah angka bulat
-                    if (numericValue == Math.floor(numericValue)) {
-                        return new BigDecimal(String.valueOf((long) numericValue));
-                    }
-                    return new BigDecimal(String.valueOf(numericValue));
+                    return BigDecimal.valueOf(numericValue).setScale(0, RoundingMode.HALF_UP);
                 case STRING:
                     String value = cell.getStringCellValue().trim();
                     if (value.isEmpty() || value.equalsIgnoreCase("#REF!")) return null;
                     value = value.replace(",", "").replace("%", "");
-                    return new BigDecimal(value).stripTrailingZeros();
-                case FORMULA:
-                    double formulaValue = cell.getNumericCellValue();
-                    if (formulaValue == Math.floor(formulaValue)) {
-                        return new BigDecimal(String.valueOf((long) formulaValue));
-                    }
-                    return new BigDecimal(String.valueOf(formulaValue));
+                    return new BigDecimal(value).setScale(0, RoundingMode.HALF_UP);
                 default:
                     return null;
             }

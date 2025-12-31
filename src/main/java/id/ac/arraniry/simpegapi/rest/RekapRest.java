@@ -26,11 +26,14 @@ public class RekapRest {
     private final RekapService rekapService;
     private final GajiService gajiService;
     private final PotonganUnitGajiService potonganUnitGajiService;
+    private final RekapRemunPegawaiService rekapRemunPegawaiService;
 
-    public RekapRest(RekapService rekapService, GajiService gajiService, PotonganUnitGajiService potonganUnitGajiService) {
+    public RekapRest(RekapService rekapService, GajiService gajiService, PotonganUnitGajiService potonganUnitGajiService,
+                     RekapRemunPegawaiService rekapRemunPegawaiService) {
         this.rekapService = rekapService;
         this.gajiService = gajiService;
         this.potonganUnitGajiService = potonganUnitGajiService;
+        this.rekapRemunPegawaiService = rekapRemunPegawaiService;
     }
 
     @Operation(summary = "Melihat uang makan detail bulanan pegawai")
@@ -41,8 +44,8 @@ public class RekapRest {
 
     @Operation(summary = "Melihat remun detail bulanan pegawai")
     @GetMapping("/remun-pegawai/{id}")
-    public RemunPegawaiVO getDetailRemunPegawai(@PathVariable String id) {
-        return rekapService.getRemunByNipDetail(id);
+    public RekapRemunPegawai getDetailRemunPegawai(@PathVariable String id) {
+        return rekapRemunPegawaiService.findById(id);
     }
 
     @GetMapping("/gaji")
@@ -71,12 +74,19 @@ public class RekapRest {
 
     @GetMapping("/remun")
     public List<Rekap> getRemun(@RequestParam Integer tahun, @RequestParam(required = false) String unitRemunId) {
-//        return rekapService.findByJenisRekapAndTahunAndBulanAndUnitRemun("remun", tahun, bulan, unitRemunId)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "remun tidak ditemukan"));
         if (unitRemunId == null || unitRemunId.isEmpty()) {
             return rekapService.findByJenisRekapAndTahun("remun", tahun);
         } else {
-            return rekapService.findByJenisRekapAndTahunAndKodeAnakSatker("remun", tahun, unitRemunId);
+            return rekapService.findByJenisRekapAndTahunAndUnitRemunId("remun", tahun, unitRemunId);
+        }
+    }
+
+    @GetMapping("/selisih-remun")
+    public List<Rekap> getSelisihRemun(@RequestParam Integer tahun, @RequestParam(required = false) String unitRemunId) {
+        if (unitRemunId == null || unitRemunId.isEmpty()) {
+            return rekapService.findByJenisRekapAndTahun("selisih", tahun);
+        } else {
+            return rekapService.findByJenisRekapAndTahunAndUnitRemunId("selisih", tahun, unitRemunId);
         }
     }
 
@@ -131,7 +141,7 @@ public class RekapRest {
     }
 
     @GetMapping("/{id}/potongan-gaji-pegawai")
-    public List<PotonganUnitGaji> getRekapPegawai(@PathVariable String id) {
+    public List<PotonganUnitGaji> getRekapPotonganGajiPegawai(@PathVariable String id) {
         return potonganUnitGajiService.findByRekapId(id);
     }
 
@@ -152,6 +162,11 @@ public class RekapRest {
         rekapService.deleteRemun(id);
     }
 
+    @GetMapping("/{id}/remun-pegawai")
+    public List<RekapRemunPegawai> getRekapRemunPegawai(@PathVariable String id) {
+        return rekapRemunPegawaiService.findByRekapId(id);
+    }
+
     @Operation(summary = "Meng-upload file selisih remun")
     @PostMapping("/selisih-remun/upload")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -163,6 +178,17 @@ public class RekapRest {
     @DeleteMapping("/{id}/selisih-remun")
     public void deleteSelisihRemun(@PathVariable String id) {
         rekapService.deleteSelisihRemun(id);
+    }
+
+    @GetMapping("/{id}/selisih-remun-pegawai")
+    public List<SelisihRekapRemunPegawai> getRekapSelisihRemunPegawai(@PathVariable String id) {
+        return rekapRemunPegawaiService.findByRekapIdSelisih(id);
+    }
+
+    @Operation(summary = "Melihat selisih remun detail bulanan pegawai")
+    @GetMapping("/selisih-remun-pegawai/{id}")
+    public SelisihRekapRemunPegawai getDetailSelisihRemunPegawai(@PathVariable String id) {
+        return rekapRemunPegawaiService.findSelisihRemunPegawaiById(id);
     }
 
 }
