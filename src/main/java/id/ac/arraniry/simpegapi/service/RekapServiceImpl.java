@@ -6,6 +6,7 @@ import id.ac.arraniry.simpegapi.repo.RekapRepo;
 import id.ac.arraniry.simpegapi.utils.ExcelUtils;
 import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
@@ -94,7 +95,7 @@ public class RekapServiceImpl implements RekapService {
 
     @Override
     public void processGajiFile(MultipartFile file, String createdBy) {
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(createdBy, environment);
 
         // Validasi file
         validateExcelFile(file);
@@ -345,7 +346,7 @@ public class RekapServiceImpl implements RekapService {
 
     @Override
     public void processPotonganGajiFile(MultipartFile file, String createdBy, String unitGajiId, Integer tahun, Integer bulan) {
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(createdBy, environment);
 
         // Validasi file
         validateExcelFile(file);
@@ -413,7 +414,7 @@ public class RekapServiceImpl implements RekapService {
     @Override
     @Transactional
     public void processRemunFile(MultipartFile file, String createdBy) {
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(createdBy, environment);
         try {
             LocalDateTime now = LocalDateTime.now();
 
@@ -445,7 +446,7 @@ public class RekapServiceImpl implements RekapService {
 
     @Override
     public void processSelisihRemunFile(MultipartFile file, String createdBy, Integer tahun, Integer bulan, String unitRemunId) {
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createdBy);
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(createdBy, environment);
         try {
             LocalDateTime now = LocalDateTime.now();
 

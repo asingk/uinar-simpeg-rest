@@ -5,11 +5,13 @@ import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
 import id.ac.arraniry.simpegapi.service.*;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -39,10 +41,11 @@ public class KehadiranRest {
     private final JenisJabatanService jenisJabatanService;
     private final WfaByTanggalService wfaByTanggalService;
     private final WfaByHariService wfaByHariService;
+    private final Environment environment;
 
     public KehadiranRest(HijriahService hijriahService, JamKerjaService jamKerjaService, KehadiranUtils kehadiranUtils, PemutihanService pemutihanService,
                          IzinService izinService, KehadiranService kehadiranService, JenisJabatanService jenisJabatanService,
-                         WfaByTanggalService wfaByTanggalService, WfaByHariService wfaByHariService) {
+                         WfaByTanggalService wfaByTanggalService, WfaByHariService wfaByHariService, Environment environment) {
         this.hijriahService = hijriahService;
         this.jamKerjaService = jamKerjaService;
         this.kehadiranUtils = kehadiranUtils;
@@ -52,6 +55,7 @@ public class KehadiranRest {
         this.jenisJabatanService = jenisJabatanService;
         this.wfaByTanggalService = wfaByTanggalService;
         this.wfaByHariService = wfaByHariService;
+        this.environment = environment;
     }
 
     @Operation(summary = "mendapatkan status waktu di server saat ini")
@@ -81,7 +85,7 @@ public class KehadiranRest {
         LocalTime jamPulangAwal = LocalTime.parse(jamKerja.getJamPulangStart());
         LocalTime jamPulangAkhir = LocalTime.parse(jamKerja.getJamPulangEnd());
         LocalTime nowTime = now.toLocalTime();
-        if(kehadiranUtils.isLibur(now.toLocalDate())) {
+        if(kehadiranService.isLibur(now.toLocalDate())) {
             status = GlobalConstants.STATUS_LIBUR;
         } else {
             if(!nowTime.isBefore(jamMasukAwal) && nowTime.isBefore(jamMasukAkhir)) {	// absen datang
@@ -125,7 +129,7 @@ public class KehadiranRest {
         if (izinOptional.isPresent()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Hari ini Anda " + izinOptional.get().getIzinCategoryDesc());
         }
-        PegawaiSimpegVO pegawaiProfilVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(createRequest.getIdPegawai());
+        PegawaiSimpegVO pegawaiProfilVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(createRequest.getIdPegawai(), environment);
         Kehadiran kehadiran = paramToSave(now, createRequest.getLongitude(), createRequest.getLatitude(), userAgent);
         if (null == createRequest.getLongitude() && null == createRequest.getLatitude() && isHarusDiKampus(pegawaiProfilVO)) {
             validasiIpPrivate(request.getRemoteAddr());
@@ -216,40 +220,15 @@ public class KehadiranRest {
     @PostMapping("/tambah")
     @ResponseStatus(HttpStatus.CREATED)
     public SaveResponse addKehadiran(@Valid @RequestBody KehadiranAddRequest request) {
-        LocalDate tglHariIni = LocalDate.now();
-        if(request.getTanggal().equals(tglHariIni) || request.getTanggal().isAfter(tglHariIni)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "hanya boleh menambahkan hari yang sudah lalu");
-        }
-        if(kehadiranUtils.isLibur(request.getTanggal())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ini hari libur!");
-        Optional<Izin> izinOptional = izinService.findByNipAndTanggal(request.getIdPegawai(), request.getTanggal());
-        if (izinOptional.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Hari ini pegawai ini " + izinOptional.get().getIzinCategoryDesc());
-        }
-        PegawaiSimpegVO pegawaiProfilVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getIdPegawai());
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy());
-        LocalTime time = switch (request.getStatus()) {
-            case GlobalConstants.STATUS_DATANG -> LocalTime.of(7, 15, 1, 123000000);
-            case GlobalConstants.STATUS_PULANG -> LocalTime.of(17, 1, 1, 123000000);
-            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
-        };
-        KehadiranVO kehadiranVO = new KehadiranVO();
-        kehadiranVO.setIdPegawai(pegawaiProfilVO.getId());
-        kehadiranVO.setNamaPegawai(pegawaiProfilVO.getNama());
-        kehadiranVO.setStatus(request.getStatus());
-        kehadiranVO.setWaktu(LocalDateTime.of(request.getTanggal(), time));
-        kehadiranVO.setTanggal(request.getTanggal().toString());
-        kehadiranVO.setIsAdded(true);
-        kehadiranVO.setAddedDate(LocalDateTime.now());
-        kehadiranVO.setAddedByNip(request.getCreatedBy());
-        kehadiranVO.setAddedByNama(pegawaiSimpegVO.getNama());
-        return kehadiranService.save(kehadiranVO);
+        return kehadiranService.add(request);
     }
 
     @Operation(summary = "menghapus kehadiran")
     @PostMapping("/safe-delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@Valid @RequestBody KehadiranUpdateRequest request) {
-        kehadiranUtils.safeDeleteIzin(request.getTanggal(), request.getIdPegawai(), kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getUpdatedBy()));
+        kehadiranUtils.safeDeleteIzin(request.getTanggal(), request.getIdPegawai(),
+                SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getUpdatedBy(), environment));
     }
 
     @Operation(summary = "Membatalkan kehadiran yang sudah di hapus")

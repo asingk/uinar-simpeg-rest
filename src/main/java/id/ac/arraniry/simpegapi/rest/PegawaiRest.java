@@ -5,6 +5,7 @@ import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
 import id.ac.arraniry.simpegapi.service.*;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.apache.tika.Tika;
@@ -98,7 +99,7 @@ public class PegawaiRest {
         kehadiranUtils.uploadFile(fileName, file.getInputStream(), environment.getProperty("env.data.cdn-usul-izin-folder"));
         UsulIzin usulIzin = new UsulIzin();
         usulIzin.setNip(idPegawai);
-        usulIzin.setNama(kehadiranUtils.getProfilPegawaiFromSimpegGraphql(idPegawai).getNama());
+        usulIzin.setNama(SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(idPegawai, environment).getNama());
         usulIzin.setIzinCategoryId(izinCategoryId);
         usulIzin.setIzinCategoryDesc(kategoriIzinService.findById(izinCategoryId).getDesc());
         usulIzin.setStartDate(startDate);

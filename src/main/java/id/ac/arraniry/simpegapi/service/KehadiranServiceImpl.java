@@ -1,12 +1,12 @@
 package id.ac.arraniry.simpegapi.service;
 
-import id.ac.arraniry.simpegapi.dto.KehadiranVO;
-import id.ac.arraniry.simpegapi.dto.LaporanKehadiranVO;
-import id.ac.arraniry.simpegapi.dto.SaveResponse;
+import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import id.ac.arraniry.simpegapi.repo.KehadiranArcRepo;
 import id.ac.arraniry.simpegapi.repo.KehadiranRepo;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -28,14 +28,19 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
     private final HariLiburService hariLiburService;
     private final PemutihanService pemutihanService;
     private final IzinService izinService;
+    private final HariLiburTapiKerjaService hariLiburTapiKerjaService;
+    private final Environment environment;
 
     public KehadiranServiceImpl(KehadiranRepo kehadiranRepo, KehadiranArcRepo kehadiranArcRepo, HariLiburService hariLiburService,
-                                PemutihanService pemutihanService, IzinService izinService) {
+                                PemutihanService pemutihanService, IzinService izinService, HariLiburTapiKerjaService hariLiburTapiKerjaService,
+                                Environment environment) {
         this.kehadiranRepo = kehadiranRepo;
         this.kehadiranArcRepo = kehadiranArcRepo;
         this.hariLiburService = hariLiburService;
         this.pemutihanService = pemutihanService;
         this.izinService = izinService;
+        this.hariLiburTapiKerjaService = hariLiburTapiKerjaService;
+        this.environment = environment;
     }
 
     @Override
@@ -917,4 +922,63 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
             kehadiranArcRepo.deleteById(kehadiranVO.getId());
         }
     }
+
+    @Override
+    public SaveResponse add(KehadiranAddRequest request) {
+        LocalDate tglHariIni = LocalDate.now();
+        if(request.getTanggal().equals(tglHariIni) || request.getTanggal().isAfter(tglHariIni)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "hanya boleh menambahkan hari yang sudah lalu");
+        }
+        if(isLibur(request.getTanggal())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ini hari libur!");
+        Optional<Izin> izinOptional = izinService.findByNipAndTanggal(request.getIdPegawai(), request.getTanggal());
+        if (izinOptional.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Hari ini pegawai ini " + izinOptional.get().getIzinCategoryDesc());
+        }
+        PegawaiSimpegVO pegawaiProfilVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getIdPegawai(), environment);
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy(), environment);
+        LocalTime time = switch (request.getStatus()) {
+            case GlobalConstants.STATUS_DATANG -> LocalTime.of(7, 15, 1, 123000000);
+            case GlobalConstants.STATUS_PULANG -> LocalTime.of(17, 1, 1, 123000000);
+            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
+        };
+        KehadiranVO kehadiranVO = new KehadiranVO();
+        kehadiranVO.setIdPegawai(pegawaiProfilVO.getId());
+        kehadiranVO.setNamaPegawai(pegawaiProfilVO.getNama());
+        kehadiranVO.setStatus(request.getStatus());
+        kehadiranVO.setWaktu(LocalDateTime.of(request.getTanggal(), time));
+        kehadiranVO.setTanggal(request.getTanggal().toString());
+        kehadiranVO.setIsAdded(true);
+        kehadiranVO.setAddedDate(LocalDateTime.now());
+        kehadiranVO.setAddedByNip(request.getCreatedBy());
+        kehadiranVO.setAddedByNama(pegawaiSimpegVO.getNama());
+        try {
+            if (tglHariIni.getYear() == request.getTanggal().getYear()) {
+                return new SaveResponse(kehadiranRepo.save(new Kehadiran(kehadiranVO)));
+            } else {
+                return new SaveResponse(kehadiranArcRepo.save(new KehadiranArc(kehadiranVO)));
+            }
+        } catch (DuplicateKeyException dke) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "rekaman sudah ada!");
+        }
+    }
+
+    @Override
+    public Boolean isLibur(LocalDate tanggal) {
+        List<HariLiburTapiKerja> hariLiburTapiKerjaList = hariLiburTapiKerjaService.findAll();
+        for(HariLiburTapiKerja hari : hariLiburTapiKerjaList) {
+            if(tanggal.isEqual(hari.getTanggal())) {
+                return false;
+            }
+        }
+        if(tanggal.getDayOfWeek().getValue() > 5)
+            return true;
+        List<HariLibur> hariLiburList = hariLiburService.findAll();
+        for(HariLibur hari : hariLiburList) {
+            if(tanggal.isEqual(hari.getTanggal())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

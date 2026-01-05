@@ -5,7 +5,8 @@ import id.ac.arraniry.simpegapi.entity.Survey;
 import id.ac.arraniry.simpegapi.entity.SurveyResult;
 import id.ac.arraniry.simpegapi.repo.SurveyRepo;
 import id.ac.arraniry.simpegapi.repo.SurveyResultRepo;
-import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,12 +18,12 @@ import java.util.Optional;
 public class SurveyServiceImpl implements SurveyService {
     private final SurveyResultRepo surveyResultRepo;
     private final SurveyRepo surveyRepo;
-    private final KehadiranUtils kehadiranUtils;
+    private final Environment environment;
 
-    public SurveyServiceImpl(SurveyResultRepo surveyResultRepo, SurveyRepo surveyRepo, KehadiranUtils kehadiranUtils) {
+    public SurveyServiceImpl(SurveyResultRepo surveyResultRepo, SurveyRepo surveyRepo, Environment environment) {
         this.surveyResultRepo = surveyResultRepo;
         this.surveyRepo = surveyRepo;
-        this.kehadiranUtils = kehadiranUtils;
+        this.environment = environment;
     }
 
     @Override
@@ -43,7 +44,7 @@ public class SurveyServiceImpl implements SurveyService {
         }
         SurveyResult surveyResult = new SurveyResult();
         surveyResult.setNip(nip);
-        surveyResult.setNamaPegawai(kehadiranUtils.getProfilPegawaiFromSimpegGraphql(nip).getNama());
+        surveyResult.setNamaPegawai(SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(nip, environment).getNama());
         surveyResult.setSurveyId(surveyId);
         surveyResult.setOptionId(answer);
         surveyResult.setAnsweredAt(LocalDateTime.now());

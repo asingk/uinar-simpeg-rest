@@ -200,7 +200,7 @@ public class ExcelUtils {
                 BigDecimal thp = getBigDecimal(row, config.thpColumn, evaluator);
 
                 List<String> rowErrors = new ArrayList<>();
-                if (nip == null || nip.trim().isEmpty()) {
+                if (nip.trim().isEmpty()) {
                     rowErrors.add("NIP kosong");
                 }
                 if (gajiBersih == null || gajiBersih.compareTo(BigDecimal.ZERO) == 0) {
@@ -241,7 +241,7 @@ public class ExcelUtils {
                 potonganUnitGaji.setBulan(bulan);
                 potonganUnitGaji.setCreatedBy(nama);
                 potonganUnitGaji.setCreatedDate(now);
-                potonganUnitGaji.setIsNipExist(isPegawaiExistInSimpeg(potonganUnitGaji.getNip(), environment));
+                potonganUnitGaji.setIsNipExist(SimpegGraphUtils.isPegawaiExistInSimpeg(potonganUnitGaji.getNip(), environment));
                 potonganUnitGaji.setRekapId(rekapId);
 
                 list.add(potonganUnitGaji);
@@ -309,38 +309,6 @@ public class ExcelUtils {
         private record ExcelConfig(int sheetIndex, int headerRow1, int headerRow2, int skipRows, int noColumn,
                                    int namaColumn, int gajiBersihColumn, int potonganStartCol, int potonganEndCol,
                                    int jumlahPotonganColumn, int thpColumn, int nipColumn, Set<Integer> skipColumns) {
-    }
-
-    private static boolean isPegawaiExistInSimpeg(String idPegawai, Environment environment) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("apikey", environment.getProperty("env.data.secret-key"));
-
-        String query = "{\"query\":\"query Pegawai($id: ID!) {" +
-                "  pegawai(id: $id) {" +
-                "    id" +
-                "}}\",\"variables\":{\"id\":\"" + idPegawai + "\"},\"operationName\":\"Pegawai\"}";
-
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                Objects.requireNonNull(environment.getProperty("env.data.simpeg-graphql-url")),
-                new HttpEntity<>(query, headers),
-                String.class);
-
-        if(200 != response.getStatusCode().value()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak diizinkan mengakses GraphQL!");
-        }
-
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            JsonNode actualObj = mapper.readTree(response.getBody());
-            JsonNode pegawai = actualObj.get("data").get("pegawai");
-
-            return pegawai != null && !pegawai.isNull();
-        } catch (JsonProcessingException jpe) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error parsing response GraphQL: " + jpe.getMessage());
-        }
     }
     
 }

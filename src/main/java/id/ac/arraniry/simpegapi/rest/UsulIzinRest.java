@@ -7,12 +7,15 @@ import id.ac.arraniry.simpegapi.dto.UsulIzinModel;
 import id.ac.arraniry.simpegapi.entity.Izin;
 import id.ac.arraniry.simpegapi.entity.Pegawai;
 import id.ac.arraniry.simpegapi.entity.UsulIzin;
+import id.ac.arraniry.simpegapi.service.KehadiranService;
 import id.ac.arraniry.simpegapi.utils.GlobalConstants;
 import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
 import id.ac.arraniry.simpegapi.service.IzinService;
 import id.ac.arraniry.simpegapi.service.UsulIzinService;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,14 +41,18 @@ public class UsulIzinRest {
     private final IzinService izinService;
     private final UsulIzinModelAssembler assembler;
     private final PagedResourcesAssembler<UsulIzin> pagedResourcesAssembler;
+    private final KehadiranService kehadiranService;
+    private final Environment environment;
 
     public UsulIzinRest(UsulIzinService usulIzinService, KehadiranUtils kehadiranUtils, IzinService izinService, UsulIzinModelAssembler assembler,
-                        PagedResourcesAssembler<UsulIzin> pagedResourcesAssembler) {
+                        PagedResourcesAssembler<UsulIzin> pagedResourcesAssembler, KehadiranService kehadiranService, Environment environment) {
         this.usulIzinService = usulIzinService;
         this.kehadiranUtils = kehadiranUtils;
         this.izinService = izinService;
         this.assembler = assembler;
         this.pagedResourcesAssembler = pagedResourcesAssembler;
+        this.kehadiranService = kehadiranService;
+        this.environment = environment;
     }
 
     @Operation(summary = "dapatkan usulan izin berdasarkan id")
@@ -74,7 +81,7 @@ public class UsulIzinRest {
         }
         int statusUsulBefore = usulIzin.getStatus();
         usulIzin.setStatus(GlobalConstants.STATUS_USUL_IZIN_DIBATALKAN);
-        Pegawai cancaledBy = new Pegawai(updatedBy, kehadiranUtils.getProfilPegawaiFromSimpegGraphql(updatedBy).getNama());
+        Pegawai cancaledBy = new Pegawai(updatedBy, SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(updatedBy, environment).getNama());
         usulIzin.setUpdatedBy(cancaledBy);
         usulIzin.setUpdatedDate(LocalDateTime.now());
         usulIzinService.save(usulIzin);
@@ -118,25 +125,25 @@ public class UsulIzinRest {
         if (GlobalConstants.STATUS_USUL_IZIN_DIPROSES != usulIzin.getStatus()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "usulan izin sudah selesai tahap proses!");
         }
-        if (kehadiranUtils.isLibur(usulIzin.getStartDate()) && null == usulIzin.getEndDate()) {
+        if (kehadiranService.isLibur(usulIzin.getStartDate()) && null == usulIzin.getEndDate()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "tanggal ini hari libur!");
         }
         usulIzin.setStatus(GlobalConstants.STATUS_USUL_IZIN_DISETUJUI);
         Pegawai pegawai = new Pegawai();
         pegawai.setNip(updatedBy);
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(updatedBy);
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(updatedBy, environment);
         pegawai.setNama(pegawaiSimpegVO.getNama());
         usulIzin.setUpdatedBy(pegawai);
         usulIzin.setUpdatedDate(LocalDateTime.now());
         usulIzinService.save(usulIzin);
-        if (!kehadiranUtils.isLibur(usulIzin.getStartDate())) {
+        if (!kehadiranService.isLibur(usulIzin.getStartDate())) {
             izinService.create(new Izin(usulIzin, usulIzin.getStartDate()));
             kehadiranUtils.safeDeleteIzin(usulIzin.getStartDate(), usulIzin.getNip(), pegawaiSimpegVO);
         }
         if (null != usulIzin.getEndDate()) {
             List<LocalDate> tanggalList = usulIzin.getStartDate().plusDays(1).datesUntil(usulIzin.getEndDate().plusDays(1)).toList();
             tanggalList.forEach((tanggal) -> {
-                if (!kehadiranUtils.isLibur(tanggal)) {
+                if (!kehadiranService.isLibur(tanggal)) {
                     izinService.create(new Izin(usulIzin, tanggal));
                     kehadiranUtils.safeDeleteIzin(tanggal, usulIzin.getNip(), pegawaiSimpegVO);
                 }
@@ -152,7 +159,7 @@ public class UsulIzinRest {
         usulIzin.setStatus(GlobalConstants.STATUS_USUL_IZIN_DITOLAK);
         Pegawai pegawai = new Pegawai();
         pegawai.setNip(updatedBy);
-        String updatedByNama = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(updatedBy).getNama();
+        String updatedByNama = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(updatedBy, environment).getNama();
         pegawai.setNama(updatedByNama);
         usulIzin.setUpdatedBy(pegawai);
         usulIzin.setUpdatedDate(LocalDateTime.now());

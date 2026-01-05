@@ -1,5 +1,6 @@
 package id.ac.arraniry.simpegapi.service;
 
+import id.ac.arraniry.simpegapi.dto.KehadiranAddRequest;
 import id.ac.arraniry.simpegapi.dto.KehadiranVO;
 import id.ac.arraniry.simpegapi.dto.SaveResponse;
 
@@ -12,4 +13,6 @@ public interface KehadiranService {
     List<KehadiranVO> findByNipAndTanggal(String nip, LocalDate tanggal);
     KehadiranVO findById(String id);
     void delete(KehadiranVO kehadiranVO);
+    SaveResponse add(KehadiranAddRequest request);
+    Boolean isLibur(LocalDate tanggal);
 }

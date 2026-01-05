@@ -4,8 +4,9 @@ import id.ac.arraniry.simpegapi.dto.PajakRequest;
 import id.ac.arraniry.simpegapi.dto.PegawaiSimpegVO;
 import id.ac.arraniry.simpegapi.entity.Pajak;
 import id.ac.arraniry.simpegapi.service.PajakService;
-import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
 import jakarta.validation.Valid;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -17,11 +18,11 @@ import java.util.List;
 public class PajakRest {
 
     private final PajakService pajakService;
-    private final KehadiranUtils kehadiranUtils;
+    private final Environment environment;
 
-    public PajakRest(PajakService pajakService, KehadiranUtils kehadiranUtils) {
+    public PajakRest(PajakService pajakService, Environment environment) {
         this.pajakService = pajakService;
-        this.kehadiranUtils = kehadiranUtils;
+        this.environment = environment;
     }
 
     @GetMapping
@@ -36,7 +37,7 @@ public class PajakRest {
 
     @PutMapping("/{id}")
     public void update(@PathVariable String id, @Valid @RequestBody PajakRequest request) {
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getUpdatedBy());
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getUpdatedBy(), environment);
         Pajak pajak = pajakService.findById(id);
         pajak.setPersen(request.getPersen());
         pajak.setLastModifiedBy(pegawaiSimpegVO.getNama());

@@ -34,41 +34,17 @@ public class KehadiranUtils {
     private static final int SESSION_TIMEOUT = 10000;
     private static final int CHANNEL_TIMEOUT = 5000;
 
-    private final HariLiburTapiKerjaService hariLiburTapiKerjaService;
-    private final HariLiburService hariLiburService;
     private final JamKerjaService jamKerjaService;
     private final HijriahService hijriahService;
     private final Environment environment;
     private final KehadiranService kehadiranService;
 
-    public KehadiranUtils(HariLiburTapiKerjaService hariLiburTapiKerjaService, HariLiburService hariLiburService, JamKerjaService jamKerjaService,
+    public KehadiranUtils(JamKerjaService jamKerjaService,
                           HijriahService hijriahService, Environment environment, KehadiranService kehadiranService) {
-        this.hariLiburTapiKerjaService = hariLiburTapiKerjaService;
-        this.hariLiburService = hariLiburService;
         this.jamKerjaService = jamKerjaService;
         this.hijriahService = hijriahService;
         this.environment = environment;
         this.kehadiranService = kehadiranService;
-    }
-
-    public boolean isLibur(LocalDate tanggal) {
-
-        List<HariLiburTapiKerja> hariLiburTapiKerjaList = hariLiburTapiKerjaService.findAll();
-        for(HariLiburTapiKerja hari : hariLiburTapiKerjaList) {
-            if(tanggal.isEqual(hari.getTanggal())) {
-                return false;
-            }
-        }
-        if(tanggal.getDayOfWeek().getValue() > 5)
-            return true;
-        List<HariLibur> hariLiburList = hariLiburService.findAll();
-        for(HariLibur hari : hariLiburList) {
-            if(tanggal.isEqual(hari.getTanggal())) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public boolean getStatusLembur(LocalDateTime now) {
@@ -83,55 +59,17 @@ public class KehadiranUtils {
         LocalTime jamPulangAkhir = LocalTime.parse(jamKerja.getJamPulangEnd());
         boolean isLembur = false;
         // jam lembur hari libur
-        if(isLibur(now.toLocalDate()) && nowTime.isAfter(jamMasukAwal.minusSeconds(1)) && nowTime.isBefore(jamPulangAkhir.plusSeconds(1))) {
+        if(kehadiranService.isLibur(now.toLocalDate()) && nowTime.isAfter(jamMasukAwal.minusSeconds(1)) && nowTime.isBefore(jamPulangAkhir.plusSeconds(1))) {
             isLembur = true;
         }
         // jam lembur hari kerja
-        else if(!isLibur(now.toLocalDate()) && nowTime.isAfter(jamLemburAwal.minusSeconds(1)) && nowTime.isBefore(jamLemburAkhir.plusSeconds(1))) {
+        else if(!kehadiranService.isLibur(now.toLocalDate()) && nowTime.isAfter(jamLemburAwal.minusSeconds(1)) && nowTime.isBefore(jamLemburAkhir.plusSeconds(1))) {
             isLembur = true;
         }
 
 //		log.debug("getStatusLembur stop " + System.currentTimeMillis());
 
         return isLembur;
-    }
-
-    public PegawaiSimpegVO getProfilPegawaiFromSimpegGraphql(String idPegawai) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("apikey", environment.getProperty("env.data.secret-key"));
-        String query = "{\"query\":\"query Pegawai($id: ID!) {" +
-                "  pegawai(id: $id) {" +
-                "    id" +
-                "    nama" +
-                "  statusAktif{" +
-                "    id" +
-                "  }" +
-                "  jenisJabatan" +
-                "}}\",\"variables\":{\"id\":\"" + idPegawai + "\"},\"operationName\":\"Pegawai\"}";
-        ResponseEntity<String> response = restTemplate.postForEntity(Objects.requireNonNull(environment.getProperty("env.data.simpeg-graphql-url")), new HttpEntity<>(query, headers), String.class);
-        if(200 != response.getStatusCode().value()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak diizinkan!");
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-//            log.debug(response.getBody());
-            JsonNode actualObj = mapper.readTree(response.getBody());
-            JsonNode pegawai = actualObj.get("data").get("pegawai");
-            if(pegawai.isNull())
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pegawai " + idPegawai + " tidak ditemukan!");
-            PegawaiSimpegVO pegawaiProfilVO = new ObjectMapper().readValue(pegawai.toString(), PegawaiSimpegVO.class);
-//            log.debug(pegawaiProfilVO.toString());
-            if(pegawaiProfilVO.getStatusAktif().getId() > 1)
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Pegawai tidak aktif!");
-            if(null == pegawaiProfilVO.getJenisJabatan())
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak punya jenis jabatan!");
-            return pegawaiProfilVO;
-        } catch (JsonProcessingException jpe) {
-            log.error(jpe.getMessage());
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tidak diizinkan!");
-        }
     }
 
     public void uploadFile(String filename, InputStream inputStream, String cdnSubfolder) {

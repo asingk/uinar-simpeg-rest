@@ -4,6 +4,8 @@ import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.JabatanBulanan;
 import id.ac.arraniry.simpegapi.repo.JabatanBulananRepo;
 import id.ac.arraniry.simpegapi.utils.KehadiranUtils;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
@@ -19,10 +21,12 @@ public class JabatanBulananServiceImpl implements JabatanBulananService {
 
     private final JabatanBulananRepo jabatanBulananRepo;
     private final KehadiranUtils kehadiranUtils;
+    private final Environment environment;
 
-    public JabatanBulananServiceImpl(JabatanBulananRepo jabatanBulananRepo, KehadiranUtils kehadiranUtils) {
+    public JabatanBulananServiceImpl(JabatanBulananRepo jabatanBulananRepo, KehadiranUtils kehadiranUtils, Environment environment) {
         this.jabatanBulananRepo = jabatanBulananRepo;
         this.kehadiranUtils = kehadiranUtils;
+        this.environment = environment;
     }
 
     @Override
@@ -64,7 +68,7 @@ public class JabatanBulananServiceImpl implements JabatanBulananService {
         jabatanBulanan.setImplementasiRemun(request.getImplementasiRemun());
         jabatanBulanan.setPajak(request.getPajak());
         jabatanBulanan.setUangMakanHarian(request.getUangMakanHarian());
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getAdmin());
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getAdmin(), environment);
         jabatanBulanan.setCreatedBy(pegawaiSimpegVO.getNama());
         jabatanBulanan.setCreatedDate(LocalDateTime.now());
         try {
@@ -93,7 +97,7 @@ public class JabatanBulananServiceImpl implements JabatanBulananService {
         jabbul.setImplementasiRemun(request.getImplementasiRemun());
         jabbul.setPajak(request.getPajak());
         jabbul.setUangMakanHarian(request.getUangMakanHarian());
-        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getAdmin());
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getAdmin(), environment);
         jabbul.setLastModifiedBy(pegawaiSimpegVO.getNama());
         jabbul.setLastModifiedDate(LocalDateTime.now());
         jabatanBulananRepo.save(jabbul);
