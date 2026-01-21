@@ -141,22 +141,22 @@ public class RekapServiceImpl implements RekapService {
         return rekapRepo.findByJenisRekapAndTahunAndUnitRemunId(jenisRekap, tahun, unitRemunId, Sort.by(Sort.Direction.DESC, "bulan"));
     }
 
-//    @Override
-//    public void processRekap(UangMakanCreateRequest request) {
-//        PegawaiSimpegVO pegawaiSimpegVO = kehadiranUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy());
-//        switch (request.getJenisRekap()) {
-//            case "um":
-//                if (null == request.getUnitGaji()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "unit gaji wajib diisi");
-//                generateRekapUangMakan(request, pegawaiSimpegVO);
-//                break;
+    @Override
+    public void processRekap(UangMakanCreateRequest request) {
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy(), environment);
+        switch (request.getJenisRekap()) {
+            case "um":
+                if (null == request.getUnitGaji()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "unit gaji wajib diisi");
+                generateRekapUangMakan(request, pegawaiSimpegVO);
+                break;
 //            case "remun":
 //                if (null == request.getUnitRemun()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "unit remun wajib diisi");
 //                generateRekapRemun(request, pegawaiSimpegVO);
 //                break;
-//            default:
-//                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "jenis rekap salah!");
-//        }
-//    }
+            default:
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "jenis rekap salah!");
+        }
+    }
 
 //    @Override
 //    public SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId) {

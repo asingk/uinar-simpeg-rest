@@ -4,6 +4,7 @@ import id.ac.arraniry.simpegapi.dto.*;
 import id.ac.arraniry.simpegapi.entity.*;
 import id.ac.arraniry.simpegapi.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import net.sf.jasperreports.engine.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -90,11 +91,11 @@ public class RekapRest {
         }
     }
 
-//    @PostMapping
-//    @ResponseStatus(HttpStatus.NO_CONTENT)
-//    public void generateRekap(@Valid @RequestBody UangMakanCreateRequest request) {
-//        rekapService.processRekap(request);
-//    }
+    @PostMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void generateRekap(@Valid @RequestBody UangMakanCreateRequest request) {
+        rekapService.processRekap(request);
+    }
 
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> download(@RequestParam("jenisRekap") String jenisRekap, @RequestParam("fileType") String fileType,

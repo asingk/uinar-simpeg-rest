@@ -1,5 +1,6 @@
 package id.ac.arraniry.simpegapi.service;
 
+import id.ac.arraniry.simpegapi.dto.UangMakanCreateRequest;
 import id.ac.arraniry.simpegapi.dto.UangMakanPegawaiVO;
 import id.ac.arraniry.simpegapi.entity.Rekap;
 import id.ac.arraniry.simpegapi.entity.RekapRemunPegawai;
@@ -20,7 +21,7 @@ public interface RekapService {
     List<Rekap> findByJenisRekapAndTahunAndKodeAnakSatker(String jenisRekap, Integer tahun, String kodeAnakSatker);
     List<Rekap> findByJenisRekapAndTahunAndUnitGajiId(String jenisRekap, Integer tahun, String unitGajiId);
     List<Rekap> findByJenisRekapAndTahunAndUnitRemunId(String jenisRekap, Integer tahun, String unitGajiId);
-//    void processRekap(UangMakanCreateRequest request);
+    void processRekap(UangMakanCreateRequest request);
 //    SseEmitter streamGenerate(Integer tahun, Integer bulan, String unitGajiId, String jenisRekap, String unitRemunId);
     UangMakanPegawaiVO getUangMakanByNipDetail(String id);
     RekapRemunPegawai getRemunByNipDetail(String id);
