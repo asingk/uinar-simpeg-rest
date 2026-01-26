@@ -75,7 +75,8 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
 
             // Logika Izin
             Optional<Izin> izinEntry = izinData.stream().filter(i -> LocalDate.parse(i.getDateString()).equals(date)).findFirst();
-            if (keterangan == null && izinEntry.isPresent()) {
+            boolean hasIzinOrCuti = izinEntry.isPresent();
+            if (keterangan == null && hasIzinOrCuti) {
                 keterangan = izinEntry.get().getIzinCategoryDesc();
             }
 
@@ -90,7 +91,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
             String absenDatang = null;
             String absenPulang = null;
 
-            if (!tglPemutihan.isEmpty()) {
+            if (!hasIzinOrCuti && !tglPemutihan.isEmpty()) {
                 for (Pemutihan p : tglPemutihan) {
                     if (GlobalConstants.STATUS_DATANG.equals(p.getStatus())) {
                         jadwalDatang = "08:00";
@@ -816,7 +817,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         if (LocalDate.now().getYear() == tahun) {
 //            List<Kehadiran> kehadiranList = kehadiranRepo.findByNipAndTanggalBetween(nip, firstDay, lastDay, Sort.by(Sort.Direction.ASC, "waktu"));
             List<Kehadiran> kehadiranList = kehadiranRepo.findBulananByNip(nip, pattern, Sort.by(Sort.Direction.ASC, "waktu"));
-            if(kehadiranList.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "tidak ditemukan!");
+//            if(kehadiranList.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "tidak ditemukan!");
             for(Kehadiran hadir : kehadiranList) {
                 KehadiranVO hadirVO = new KehadiranVO(hadir);
                 hadirVOList.add(hadirVO);
@@ -824,7 +825,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         } else {
 //            List<KehadiranArc> kehadiranList = kehadiranArcRepo.findByNipAndTanggalBetween(nip, firstDay, lastDay, Sort.by(Sort.Direction.ASC, "waktu"));
             List<KehadiranArc> kehadiranList = kehadiranArcRepo.findBulananByNip(nip, pattern, Sort.by(Sort.Direction.ASC, "waktu"));
-            if(kehadiranList.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "tidak ditemukan!");
+//            if(kehadiranList.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "tidak ditemukan!");
             for(KehadiranArc hadir : kehadiranList) {
                 KehadiranVO hadirVO = new KehadiranVO(hadir);
                 hadirVOList.add(hadirVO);
