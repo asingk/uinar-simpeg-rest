@@ -11,6 +11,7 @@ public class KehadiranResponse {
     private String nama;
     private LocalDateTime waktu;
     private String status;
+    private String jam;
 
     public KehadiranResponse(KehadiranVO kehadiranVO) {
         this.id = kehadiranVO.getId();
@@ -18,5 +19,6 @@ public class KehadiranResponse {
         this.nama = kehadiranVO.getNamaPegawai();
         this.waktu = kehadiranVO.getWaktu();
         this.status = kehadiranVO.getStatus();
+        this.jam = kehadiranVO.getJam();
     }
 }

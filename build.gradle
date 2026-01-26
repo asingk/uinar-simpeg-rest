@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'id.ac.ar-raniry'
-version = '6.10.1.RELEASE'
+version = '6.11.1.RELEASE'
 
 java {
     toolchain {
@@ -34,7 +34,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3'
     implementation 'net.sf.jasperreports:jasperreports:6.21.3'
-    implementation 'org.apache.tika:tika-core:3.0.0'
+    implementation 'org.apache.tika:tika-core:3.2.2'
     implementation 'com.github.mwiede:jsch:0.2.22'
     implementation 'org.apache.poi:poi:5.4.1'
     implementation 'org.apache.poi:poi-ooxml:5.4.1'

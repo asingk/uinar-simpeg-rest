@@ -145,15 +145,15 @@ public class PegawaiRest {
             @RequestParam("tanggal") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate tanggal) {
 
 //		String nip = "198703222019031010";
-//		tanggal = LocalDate.of(2023, 9, 12);
+//		tanggal = LocalDate.of(2026, 1, 23);
 //		status = "PULANG";
         KehadiranVO hadir = new KehadiranVO();
-        Pemutihan pemutihan = pemutihanService.findByTanggalAndStatus(tanggal, status);
+        Pemutihan pemutihan = pemutihanService.findByDateStringAndStatus(tanggal, status);
         if(null != pemutihan) {
             hadir.setId(pemutihan.getId());
             hadir.setStatus(GlobalConstants.STATUS_PEMUTIHAN);
         } else {
-            hadir = kehadiranService.findByNipAndStatusAndTanggal(idPegawai, status, tanggal);
+            hadir = kehadiranService.findByPegawaiNipAndStatusAndTanggal(idPegawai, status, tanggal);
         }
         return new KehadiranResponse(hadir);
     }

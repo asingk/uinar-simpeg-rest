@@ -23,16 +23,17 @@ public class PemutihanServiceImpl implements PemutihanService {
     }
 
     @Override
-    public Pemutihan findByTanggalAndStatus(LocalDate tanggal, String status) {
-        return pemutihanRepo.findByTanggalAndStatus(tanggal, status);
+    public Pemutihan findByDateStringAndStatus(LocalDate tanggal, String status) {
+        return pemutihanRepo.findByDateStringAndStatus(tanggal.toString(), status);
     }
 
     @Override
     public List<Pemutihan> findByBulanAndTahun(Integer bulan, Integer tahun) {
-        LocalDate startDate = LocalDate.of(tahun, bulan, 1);
-        YearMonth yearMonth = YearMonth.of(tahun, bulan);
-        LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
-        return pemutihanRepo.findByTanggalBetween(startDate, endDate, Sort.by(Sort.Direction.ASC, "tanggal"));
+//        LocalDate startDate = LocalDate.of(tahun, bulan, 1);
+//        YearMonth yearMonth = YearMonth.of(tahun, bulan);
+//        LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
+        String pattern = String.format("%d-%02d-", tahun, bulan);
+        return pemutihanRepo.findBulanan(pattern, Sort.by(Sort.Direction.ASC, "dateString"));
     }
 
     @Override

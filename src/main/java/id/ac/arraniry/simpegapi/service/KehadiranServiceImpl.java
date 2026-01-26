@@ -13,10 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.YearMonth;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,12 +43,124 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
 
     @Override
     public List<LaporanKehadiranVO> findLaporanBulananByNip(String nip, int bulan, int tahun) {
-        try {
-            List<KehadiranVO> kehadiranVOList = findByNipAndBulanAndTahun(nip, bulan, tahun);
-            return generateLaporanVO(nip, kehadiranVOList, bulan, tahun);
-        } catch (ResponseStatusException nfe) {
-            return generateLaporanVO(nip, null, bulan, tahun);
+        YearMonth yearMonth = YearMonth.of(tahun, bulan);
+        LocalDate today = LocalDate.now();
+        int endDay = yearMonth.lengthOfMonth();
+        if (yearMonth.equals(YearMonth.from(today))) {
+            endDay = today.getDayOfMonth();
         }
+        List<KehadiranVO> kehadiranVOList = findKehadiranByNipAndBulanAndTahun(nip, bulan, tahun);
+        Map<LocalDate, List<KehadiranVO>> kehadiranMap = kehadiranVOList.stream()
+                .collect(Collectors.groupingBy(k -> k.getWaktu().toLocalDate()));
+
+        List<LocalDate> liburDates = hariLiburService.hariLiburBulanan(tahun, bulan);
+        List<Izin> izinData = izinService.findByNipAndTahunAndBulan(nip, tahun, bulan);
+        List<Pemutihan> pemutihanData = pemutihanService.findByBulanAndTahun(bulan, tahun);
+
+        List<LaporanKehadiranVO> fullRecap = new ArrayList<>();
+
+        for (int day = 1; day <= endDay; day++) {
+            LocalDate date = LocalDate.of(tahun, bulan, day);
+            LaporanKehadiranVO lapVO = new LaporanKehadiranVO();
+            lapVO.setTanggal(date);
+            lapVO.setHari(getNamaHari(date.getDayOfWeek().getValue()));
+
+            String keterangan = null;
+            int dayOfWeek = date.getDayOfWeek().getValue();
+
+            // Logika Keterangan Hari Libur
+            if (dayOfWeek == 6 || dayOfWeek == 7 || liburDates.contains(date)) {
+                keterangan = "Libur";
+            }
+
+            // Logika Izin
+            Optional<Izin> izinEntry = izinData.stream().filter(i -> LocalDate.parse(i.getDateString()).equals(date)).findFirst();
+            if (keterangan == null && izinEntry.isPresent()) {
+                keterangan = izinEntry.get().getIzinCategoryDesc();
+            }
+
+            // Logika Pemutihan
+            List<Pemutihan> tglPemutihan = pemutihanData.stream().filter(p -> LocalDate.parse(p.getDateString()).equals(date)).toList();
+            boolean isPemutihan = false;
+
+            // Default Jadwal (Akan di-override jika pemutihan)
+            String jadwalDatang = (keterangan == null) ? "08:00" : null;
+            String jadwalPulang = (keterangan == null) ? (dayOfWeek == 5 ? "17:00" : "16:30") : null;
+
+            String absenDatang = null;
+            String absenPulang = null;
+
+            if (!tglPemutihan.isEmpty()) {
+                for (Pemutihan p : tglPemutihan) {
+                    if (GlobalConstants.STATUS_DATANG.equals(p.getStatus())) {
+                        jadwalDatang = "08:00";
+                        absenDatang = "08:00";
+                        isPemutihan = true;
+                    } else if (GlobalConstants.STATUS_PULANG.equals(p.getStatus())) {
+                        jadwalPulang = (dayOfWeek == 5) ? "17:00" : "16:30";
+                        absenPulang = jadwalPulang;
+                        isPemutihan = true;
+                    }
+                }
+            }
+
+            // Jika bukan pemutihan, ambil dari data kehadiran asli
+            if (!isPemutihan && kehadiranMap.containsKey(date)) {
+                List<KehadiranVO> dayAbsen = kehadiranMap.get(date);
+                KehadiranVO datangEntry = dayAbsen.stream()
+                        .filter(a -> GlobalConstants.STATUS_DATANG.equals(a.getStatus()))
+                        .findFirst().orElse(null);
+                absenDatang = (datangEntry != null) ? datangEntry.getJam() : null;
+                if (datangEntry != null && datangEntry.getJadwal() != null) {
+                    jadwalDatang = datangEntry.getJadwal();
+                }
+                KehadiranVO pulangEntry = dayAbsen.stream()
+                        .filter(a -> GlobalConstants.STATUS_PULANG.equals(a.getStatus()))
+                        .reduce((first, second) -> second).orElse(null);
+                absenPulang = (pulangEntry != null) ? pulangEntry.getJam() : null;
+                if (pulangEntry != null && pulangEntry.getJadwal() != null) {
+                    jadwalPulang = pulangEntry.getJadwal();
+                }
+            }
+
+            // Update keterangan jika tidak ada absen dan bukan hari libur/izin
+            if (isPemutihan) {
+                keterangan = null;
+            } else if (keterangan == null && (absenDatang == null && absenPulang == null)) {
+                keterangan = "Tanpa Keterangan";
+            }
+
+            lapVO.setJadwalDatang(jadwalDatang);
+            lapVO.setAbsenDatang(absenDatang);
+            lapVO.setJadwalPulang(jadwalPulang);
+            lapVO.setAbsenPulang(absenPulang);
+            lapVO.setKeterangan(keterangan);
+
+            // Hitung Cepat/Telat (Menit) - Logic sesuai query: jika pemutihan 0, jika absen null tapi jadwal ada, hitung selisih default (simulasi telat)
+            lapVO.setCepatTelatDatang(calculateMinutesDiff(jadwalDatang, absenDatang, true, isPemutihan));
+            lapVO.setCepatTelatPulang(calculateMinutesDiff(jadwalPulang, absenPulang, false, isPemutihan));
+
+            fullRecap.add(lapVO);
+        }
+        return fullRecap;
+    }
+
+    private String getNamaHari(int dayOfWeek) {
+        return switch (dayOfWeek) {
+            case 1 -> "Senin"; case 2 -> "Selasa"; case 3 -> "Rabu";
+            case 4 -> "Kamis"; case 5 -> "Jumat"; case 6 -> "Sabtu";
+            case 7 -> "Minggu"; default -> null;
+        };
+    }
+
+    private Integer calculateMinutesDiff(String jadwal, String absen, boolean isDatang, boolean isPemutihan) {
+        if (isPemutihan) return 0;
+        if (jadwal == null || absen == null) return null;
+
+        int jadwalMenit = Integer.parseInt(jadwal.split(":")[0]) * 60 + Integer.parseInt(jadwal.split(":")[1]);
+        int absenMenit = Integer.parseInt(absen.split(":")[0]) * 60 + Integer.parseInt(absen.split(":")[1]);
+
+        return isDatang ? (jadwalMenit - absenMenit) : (absenMenit - jadwalMenit);
     }
 
     @Override
@@ -546,66 +656,66 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
 //        rekapRemunPegawai.setP4(potong[1][3]);
 //    }
 
-    private boolean isNextPegawai ( int j, int hadirListSize, String currentIdPegawai, KehadiranVO nextHehadiranVO){
-        boolean result = false;
-        if (j == hadirListSize - 1) {
-            result = true;
-        } else if (!currentIdPegawai.equals(nextHehadiranVO.getIdPegawai())) {
-            result = true;
-        }
-        return result;
-    }
+//    private boolean isNextPegawai ( int j, int hadirListSize, String currentIdPegawai, KehadiranVO nextHehadiranVO){
+//        boolean result = false;
+//        if (j == hadirListSize - 1) {
+//            result = true;
+//        } else if (!currentIdPegawai.equals(nextHehadiranVO.getIdPegawai())) {
+//            result = true;
+//        }
+//        return result;
+//    }
 
-    private boolean isPemutihanInv (LocalDate tanggal, String status, List < Pemutihan > pemutihanList){
-        boolean result = false;
-        if (null != pemutihanList && !pemutihanList.isEmpty()) {
-            for (Pemutihan row : pemutihanList) {
-                if (tanggal.isEqual(row.getTanggal()) && status.equals(row.getStatus())) {
-                    result = true;
-                    break;
-                }
-            }
-        }
-        return !result;
-    }
+//    private boolean isPemutihanInv (LocalDate tanggal, String status, List < Pemutihan > pemutihanList){
+//        boolean result = false;
+//        if (null != pemutihanList && !pemutihanList.isEmpty()) {
+//            for (Pemutihan row : pemutihanList) {
+//                if (tanggal.isEqual(row.getTanggal()) && status.equals(row.getStatus())) {
+//                    result = true;
+//                    break;
+//                }
+//            }
+//        }
+//        return !result;
+//    }
 
-    private double potongRemon (KehadiranVO kehadiran,int[][] potong){
-        double potongPersen = 0;
-        if (kehadiran.getStatus().equals(GlobalConstants.STATUS_DATANG)) {
-            if (null != kehadiran.getKurangMenit() && kehadiran.getKurangMenit() > 0) {
-                if (kehadiran.getKurangMenit() < 31) {
-                    potong[0][0]++;
-                    potongPersen = 0.5;
-                } else if (kehadiran.getKurangMenit() < 61) {
-                    potong[0][1]++;
-                    potongPersen = 1;
-                } else if (kehadiran.getKurangMenit() < 91) {
-                    potong[0][2]++;
-                    potongPersen = 1.25;
-                } else {
-                    potong[0][3]++;
-                    potongPersen = 1.5;
-                }
-            }
-        } else {
-            if (null != kehadiran.getKurangMenit() && kehadiran.getKurangMenit() > 0) {
-                if (kehadiran.getKurangMenit() < 31) {
-                    potong[1][0]++;
-                    potongPersen = 0.5;
-                } else if (kehadiran.getKurangMenit() < 61) {
-                    potong[1][1]++;
-                    potongPersen = 1;
-                } else if (kehadiran.getKurangMenit() < 91) {
-                    potong[1][2]++;
-                    potongPersen = 1.25;
-                } else {
-                    potong[1][3]++;
-                    potongPersen = 1.5;
-                }
-            }
-        }
-        return potongPersen;
-    }
+//    private double potongRemon (KehadiranVO kehadiran,int[][] potong){
+//        double potongPersen = 0;
+//        if (kehadiran.getStatus().equals(GlobalConstants.STATUS_DATANG)) {
+//            if (null != kehadiran.getKurangMenit() && kehadiran.getKurangMenit() > 0) {
+//                if (kehadiran.getKurangMenit() < 31) {
+//                    potong[0][0]++;
+//                    potongPersen = 0.5;
+//                } else if (kehadiran.getKurangMenit() < 61) {
+//                    potong[0][1]++;
+//                    potongPersen = 1;
+//                } else if (kehadiran.getKurangMenit() < 91) {
+//                    potong[0][2]++;
+//                    potongPersen = 1.25;
+//                } else {
+//                    potong[0][3]++;
+//                    potongPersen = 1.5;
+//                }
+//            }
+//        } else {
+//            if (null != kehadiran.getKurangMenit() && kehadiran.getKurangMenit() > 0) {
+//                if (kehadiran.getKurangMenit() < 31) {
+//                    potong[1][0]++;
+//                    potongPersen = 0.5;
+//                } else if (kehadiran.getKurangMenit() < 61) {
+//                    potong[1][1]++;
+//                    potongPersen = 1;
+//                } else if (kehadiran.getKurangMenit() < 91) {
+//                    potong[1][2]++;
+//                    potongPersen = 1.25;
+//                } else {
+//                    potong[1][3]++;
+//                    potongPersen = 1.5;
+//                }
+//            }
+//        }
+//        return potongPersen;
+//    }
 
     private List<KehadiranVO> findByNipAndBulanAndTahunAndIsDeletedFalse(String nip, int bulan, int tahun) {
         LocalTime timeStart = LocalTime.of(0, 0, 1);
@@ -693,24 +803,27 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         return LocalDate.of(tahunDepan, bulanDepan, 1);
     }
 
-    private List<KehadiranVO> findByNipAndBulanAndTahun(String nip, int bulan, int tahun) {
-        LocalTime timeStart = LocalTime.of(0, 0, 1);
-        LocalTime timeEnd = LocalTime.of(23, 59, 59);
-        LocalDate dayStart = LocalDate.of(tahun, bulan, 1);
-        YearMonth yearMonth = YearMonth.of(tahun, bulan);
-        LocalDate dayEnd = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
-        LocalDateTime firstDay = LocalDateTime.of(dayStart, timeStart);
-        LocalDateTime lastDay = LocalDateTime.of(dayEnd, timeEnd);
+    private List<KehadiranVO> findKehadiranByNipAndBulanAndTahun(String nip, int bulan, int tahun) {
+//        LocalTime timeStart = LocalTime.of(0, 0, 1);
+//        LocalTime timeEnd = LocalTime.of(23, 59, 59);
+//        LocalDate dayStart = LocalDate.of(tahun, bulan, 1);
+//        YearMonth yearMonth = YearMonth.of(tahun, bulan);
+//        LocalDate dayEnd = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
+//        LocalDateTime firstDay = LocalDateTime.of(dayStart, timeStart);
+//        LocalDateTime lastDay = LocalDateTime.of(dayEnd, timeEnd);
         List<KehadiranVO> hadirVOList = new ArrayList<>();
-            if (LocalDate.now().getYear() == tahun) {
-            List<Kehadiran> kehadiranList = kehadiranRepo.findByNipAndTanggalBetween(nip, firstDay, lastDay, Sort.by(Sort.Direction.ASC, "waktu"));
+        String pattern = String.format("^%d-%02d-", tahun, bulan);
+        if (LocalDate.now().getYear() == tahun) {
+//            List<Kehadiran> kehadiranList = kehadiranRepo.findByNipAndTanggalBetween(nip, firstDay, lastDay, Sort.by(Sort.Direction.ASC, "waktu"));
+            List<Kehadiran> kehadiranList = kehadiranRepo.findBulananByNip(nip, pattern, Sort.by(Sort.Direction.ASC, "waktu"));
             if(kehadiranList.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "tidak ditemukan!");
             for(Kehadiran hadir : kehadiranList) {
                 KehadiranVO hadirVO = new KehadiranVO(hadir);
                 hadirVOList.add(hadirVO);
             }
         } else {
-            List<KehadiranArc> kehadiranList = kehadiranArcRepo.findByNipAndTanggalBetween(nip, firstDay, lastDay, Sort.by(Sort.Direction.ASC, "waktu"));
+//            List<KehadiranArc> kehadiranList = kehadiranArcRepo.findByNipAndTanggalBetween(nip, firstDay, lastDay, Sort.by(Sort.Direction.ASC, "waktu"));
+            List<KehadiranArc> kehadiranList = kehadiranArcRepo.findBulananByNip(nip, pattern, Sort.by(Sort.Direction.ASC, "waktu"));
             if(kehadiranList.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "tidak ditemukan!");
             for(KehadiranArc hadir : kehadiranList) {
                 KehadiranVO hadirVO = new KehadiranVO(hadir);
@@ -720,156 +833,156 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         return hadirVOList;
     }
 
-    protected List<LaporanKehadiranVO> generateLaporanVO(String nip, List<KehadiranVO> hadirList, int month, int year) {
-        List<LaporanKehadiranVO> resultList = new ArrayList<>();
-        YearMonth yearMonth = YearMonth.of(year, month);
-        int lengthOfMonth = yearMonth.equals(YearMonth.of(LocalDate.now().getYear(),
-                LocalDate.now().getMonthValue())) ? LocalDate.now().getDayOfMonth() : yearMonth.lengthOfMonth();
-        List<LocalDate> hariLibur = hariLiburService.hariLiburBulanan(year, month);
-        if(null != hadirList && !hadirList.isEmpty()) {
-            int hadirIndex = 0;
-
-            for(int tgl=1; tgl<=lengthOfMonth; tgl++) {
-                LocalDate date = LocalDate.of(year, month, tgl);
-
-                if(!hariLibur.contains(date)) {
-                    LaporanKehadiranVO lapVO = new LaporanKehadiranVO();
-                    // gak absen datang, gak absen pulang, gak ada absen lagi di hari selanjutnya
-                    if(hadirIndex == hadirList.size()) {
-                        lapVO.setTanggal(date);
-                        resultList.add(lapVO);
-                    }
-                    while(hadirIndex < hadirList.size()) {
-                        KehadiranVO hadirVO = hadirList.get(hadirIndex);
-
-                        if(hadirVO.getWaktu().toLocalDate().isAfter(date)) {
-                            LaporanKehadiranVO lastLapVO = new LaporanKehadiranVO();
-                            if(!resultList.isEmpty()) {
-                                lastLapVO = resultList.get(resultList.size()-1);
-                            }
-
-                            // gak absen datang, gak absen pulang
-                            if(resultList.isEmpty() || lastLapVO.getTanggal().isBefore(date)) {
-                                lapVO.setTanggal(date);
-                                resultList.add(lapVO);
-                                break;
-                            }
-
-                            // ada absen datang, gak absen pulang tapi ada absen di hari selanjutnya
-                            else if(null != lastLapVO.getJamDatang() && null == lastLapVO.getJamPulang()
-                                    && lastLapVO.getTanggal().isEqual(date)) {
-                                break;
-                            }
-
-                        }
-
-                        // absen datang
-                        if(GlobalConstants.STATUS_DATANG.equals(hadirVO.getStatus())) {
-                            lapVO.setTanggal(date);
-                            lapVO.setJamDatang(hadirVO.getWaktu().toLocalTime());
-                            if(null != hadirVO.getIsDeleted() && hadirVO.getIsDeleted()) {
-                                lapVO.setKeteranganDatang(GlobalConstants.DIHAPUS_STRING);
-                            } else if(null != hadirVO.getIsAdded() && hadirVO.getIsAdded()) {
-                                lapVO.setKeteranganDatang(GlobalConstants.DITAMBAHKAN_STRING);
-                            }
-                            lapVO.setTelatDatang(hadirVO.getKurangMenit());
-                            resultList.add(lapVO);
-                            hadirIndex++;
-                        }
-
-                        // absen pulang tapi gak absen datang
-                        else if(GlobalConstants.STATUS_PULANG.equals(hadirVO.getStatus()) && (resultList.isEmpty()
-                                || !resultList.get(resultList.size() - 1).getTanggal().isEqual(hadirVO.getWaktu().toLocalDate()))) {
-                            lapVO.setTanggal(date);
-                            lapVO.setJamPulang(hadirVO.getWaktu().toLocalTime());
-                            if(null != hadirVO.getIsDeleted() && hadirVO.getIsDeleted()) {
-                                lapVO.setKeteranganPulang(GlobalConstants.DIHAPUS_STRING);
-                            } else if(null != hadirVO.getIsAdded() && hadirVO.getIsAdded()) {
-                                lapVO.setKeteranganPulang(GlobalConstants.DITAMBAHKAN_STRING);
-                            }
-                            lapVO.setCepatPulang(hadirVO.getKurangMenit());
-
-                            resultList.add(lapVO);
-                            hadirIndex++;
-                            break;
-                        }
-
-                        // absen pulang, ada absen datang
-                        else if(GlobalConstants.STATUS_PULANG.equals(hadirVO.getStatus())
-                                && resultList.get(resultList.size()-1).getTanggal().isEqual(hadirVO.getWaktu().toLocalDate())){
-                            lapVO = resultList.get(resultList.size()-1);
-                            lapVO.setJamPulang(hadirVO.getWaktu().toLocalTime());
-                            if(null != hadirVO.getIsDeleted() && hadirVO.getIsDeleted()) {
-                                lapVO.setKeteranganPulang(GlobalConstants.DIHAPUS_STRING);
-                            } else if(null != hadirVO.getIsAdded() && hadirVO.getIsAdded()) {
-                                lapVO.setKeteranganPulang(GlobalConstants.DITAMBAHKAN_STRING);
-                            }
-                            lapVO.setCepatPulang(hadirVO.getKurangMenit());
-                            hadirIndex++;
-                            break;
-                        }
-
-                    }
-                }
-            }
-        } else {
-            for(int tgl=1; tgl<=lengthOfMonth; tgl++) {
-                LocalDate date = LocalDate.of(year, month, tgl);
-                if(!hariLibur.contains(date)) {
-                    LaporanKehadiranVO lapVO = new LaporanKehadiranVO();
-                    // gak absen datang, gak absen pulang, gak ada absen lagi di hari selanjutnya
-                    lapVO.setTanggal(date);
-                    resultList.add(lapVO);
-                }
-            }
-        }
-
-        List<Pemutihan> pemutihanList = pemutihanService.findByBulanAndTahun(month, year);
-        if(null != pemutihanList && !pemutihanList.isEmpty()) {
-            outer:
-            for(Pemutihan row: pemutihanList) {
-                for (LaporanKehadiranVO laporanKehadiranVO : resultList) {
-                    if (row.getTanggal().isEqual(laporanKehadiranVO.getTanggal())) {
-                        if (row.getStatus().equals(GlobalConstants.STATUS_DATANG)) {
-                            laporanKehadiranVO.setKeteranganDatang(GlobalConstants.PEMUTIHAN_STRING);
-                        } else if (row.getStatus().equals(GlobalConstants.STATUS_PULANG)) {
-                            laporanKehadiranVO.setKeteranganPulang(GlobalConstants.PEMUTIHAN_STRING);
-                        }
-                        continue outer;
-                    }
-                }
-            }
-        }
-
-        List<Izin> izinList = izinService.findByNipAndTahunAndBulan(nip, year, month);
-        if (null != izinList && !izinList.isEmpty()) {
-            outer:
-            for (Izin row: izinList) {
-                for (LaporanKehadiranVO laporanKehadiranVO : resultList) {
-                    if (row.getTanggal().isEqual(laporanKehadiranVO.getTanggal())) {
-                        laporanKehadiranVO.setKeteranganDatang(row.getIzinCategoryDesc());
-                        laporanKehadiranVO.setKeteranganPulang(row.getIzinCategoryDesc());
-                        continue outer;
-                    }
-                }
-            }
-        }
-        return resultList;
-    }
+//    protected List<LaporanKehadiranVO> generateLaporanVO(String nip, List<KehadiranVO> hadirList, int month, int year) {
+//        List<LaporanKehadiranVO> resultList = new ArrayList<>();
+//        YearMonth yearMonth = YearMonth.of(year, month);
+//        int lengthOfMonth = yearMonth.equals(YearMonth.of(LocalDate.now().getYear(),
+//                LocalDate.now().getMonthValue())) ? LocalDate.now().getDayOfMonth() : yearMonth.lengthOfMonth();
+//        List<LocalDate> hariLibur = hariLiburService.hariLiburBulanan(year, month);
+//        if(null != hadirList && !hadirList.isEmpty()) {
+//            int hadirIndex = 0;
+//
+//            for(int tgl=1; tgl<=lengthOfMonth; tgl++) {
+//                LocalDate date = LocalDate.of(year, month, tgl);
+//
+//                if(!hariLibur.contains(date)) {
+//                    LaporanKehadiranVO lapVO = new LaporanKehadiranVO();
+//                    // gak absen datang, gak absen pulang, gak ada absen lagi di hari selanjutnya
+//                    if(hadirIndex == hadirList.size()) {
+//                        lapVO.setTanggal(date);
+//                        resultList.add(lapVO);
+//                    }
+//                    while(hadirIndex < hadirList.size()) {
+//                        KehadiranVO hadirVO = hadirList.get(hadirIndex);
+//
+//                        if(hadirVO.getWaktu().toLocalDate().isAfter(date)) {
+//                            LaporanKehadiranVO lastLapVO = new LaporanKehadiranVO();
+//                            if(!resultList.isEmpty()) {
+//                                lastLapVO = resultList.get(resultList.size()-1);
+//                            }
+//
+//                            // gak absen datang, gak absen pulang
+//                            if(resultList.isEmpty() || lastLapVO.getTanggal().isBefore(date)) {
+//                                lapVO.setTanggal(date);
+//                                resultList.add(lapVO);
+//                                break;
+//                            }
+//
+//                            // ada absen datang, gak absen pulang tapi ada absen di hari selanjutnya
+//                            else if(null != lastLapVO.getJamDatang() && null == lastLapVO.getJamPulang()
+//                                    && lastLapVO.getTanggal().isEqual(date)) {
+//                                break;
+//                            }
+//
+//                        }
+//
+//                        // absen datang
+//                        if(GlobalConstants.STATUS_DATANG.equals(hadirVO.getStatus())) {
+//                            lapVO.setTanggal(date);
+//                            lapVO.setJamDatang(hadirVO.getWaktu().toLocalTime());
+//                            if(null != hadirVO.getIsDeleted() && hadirVO.getIsDeleted()) {
+//                                lapVO.setKeteranganDatang(GlobalConstants.DIHAPUS_STRING);
+//                            } else if(null != hadirVO.getIsAdded() && hadirVO.getIsAdded()) {
+//                                lapVO.setKeteranganDatang(GlobalConstants.DITAMBAHKAN_STRING);
+//                            }
+//                            lapVO.setTelatDatang(hadirVO.getKurangMenit());
+//                            resultList.add(lapVO);
+//                            hadirIndex++;
+//                        }
+//
+//                        // absen pulang tapi gak absen datang
+//                        else if(GlobalConstants.STATUS_PULANG.equals(hadirVO.getStatus()) && (resultList.isEmpty()
+//                                || !resultList.get(resultList.size() - 1).getTanggal().isEqual(hadirVO.getWaktu().toLocalDate()))) {
+//                            lapVO.setTanggal(date);
+//                            lapVO.setJamPulang(hadirVO.getWaktu().toLocalTime());
+//                            if(null != hadirVO.getIsDeleted() && hadirVO.getIsDeleted()) {
+//                                lapVO.setKeteranganPulang(GlobalConstants.DIHAPUS_STRING);
+//                            } else if(null != hadirVO.getIsAdded() && hadirVO.getIsAdded()) {
+//                                lapVO.setKeteranganPulang(GlobalConstants.DITAMBAHKAN_STRING);
+//                            }
+//                            lapVO.setCepatPulang(hadirVO.getKurangMenit());
+//
+//                            resultList.add(lapVO);
+//                            hadirIndex++;
+//                            break;
+//                        }
+//
+//                        // absen pulang, ada absen datang
+//                        else if(GlobalConstants.STATUS_PULANG.equals(hadirVO.getStatus())
+//                                && resultList.get(resultList.size()-1).getTanggal().isEqual(hadirVO.getWaktu().toLocalDate())){
+//                            lapVO = resultList.get(resultList.size()-1);
+//                            lapVO.setJamPulang(hadirVO.getWaktu().toLocalTime());
+//                            if(null != hadirVO.getIsDeleted() && hadirVO.getIsDeleted()) {
+//                                lapVO.setKeteranganPulang(GlobalConstants.DIHAPUS_STRING);
+//                            } else if(null != hadirVO.getIsAdded() && hadirVO.getIsAdded()) {
+//                                lapVO.setKeteranganPulang(GlobalConstants.DITAMBAHKAN_STRING);
+//                            }
+//                            lapVO.setCepatPulang(hadirVO.getKurangMenit());
+//                            hadirIndex++;
+//                            break;
+//                        }
+//
+//                    }
+//                }
+//            }
+//        } else {
+//            for(int tgl=1; tgl<=lengthOfMonth; tgl++) {
+//                LocalDate date = LocalDate.of(year, month, tgl);
+//                if(!hariLibur.contains(date)) {
+//                    LaporanKehadiranVO lapVO = new LaporanKehadiranVO();
+//                    // gak absen datang, gak absen pulang, gak ada absen lagi di hari selanjutnya
+//                    lapVO.setTanggal(date);
+//                    resultList.add(lapVO);
+//                }
+//            }
+//        }
+//
+//        List<Pemutihan> pemutihanList = pemutihanService.findByBulanAndTahun(month, year);
+//        if(null != pemutihanList && !pemutihanList.isEmpty()) {
+//            outer:
+//            for(Pemutihan row: pemutihanList) {
+//                for (LaporanKehadiranVO laporanKehadiranVO : resultList) {
+//                    if (row.getTanggal().isEqual(laporanKehadiranVO.getTanggal())) {
+//                        if (row.getStatus().equals(GlobalConstants.STATUS_DATANG)) {
+//                            laporanKehadiranVO.setKeteranganDatang(GlobalConstants.PEMUTIHAN_STRING);
+//                        } else if (row.getStatus().equals(GlobalConstants.STATUS_PULANG)) {
+//                            laporanKehadiranVO.setKeteranganPulang(GlobalConstants.PEMUTIHAN_STRING);
+//                        }
+//                        continue outer;
+//                    }
+//                }
+//            }
+//        }
+//
+//        List<Izin> izinList = izinService.findByNipAndTahunAndBulan(nip, year, month);
+//        if (null != izinList && !izinList.isEmpty()) {
+//            outer:
+//            for (Izin row: izinList) {
+//                for (LaporanKehadiranVO laporanKehadiranVO : resultList) {
+//                    if (row.getTanggal().isEqual(laporanKehadiranVO.getTanggal())) {
+//                        laporanKehadiranVO.setKeteranganDatang(row.getIzinCategoryDesc());
+//                        laporanKehadiranVO.setKeteranganPulang(row.getIzinCategoryDesc());
+//                        continue outer;
+//                    }
+//                }
+//            }
+//        }
+//        return resultList;
+//    }
 
     @Override
-    public KehadiranVO findByNipAndStatusAndTanggal(String nip, String status, LocalDate tanggal) {
-        LocalTime timeStart = LocalTime.of(0, 0, 1);
-        LocalTime timeEnd = LocalTime.of(23, 59, 59);
-        LocalDateTime todayStart = LocalDateTime.of(tanggal, timeStart);
-        LocalDateTime todayEnd = LocalDateTime.of(tanggal, timeEnd);
+    public KehadiranVO findByPegawaiNipAndStatusAndTanggal(String nip, String status, LocalDate tanggal) {
+//        LocalTime timeStart = LocalTime.of(0, 0, 1);
+//        LocalTime timeEnd = LocalTime.of(23, 59, 59);
+//        LocalDateTime todayStart = LocalDateTime.of(tanggal, timeStart);
+//        LocalDateTime todayEnd = LocalDateTime.of(tanggal, timeEnd);
         if (tanggal.getYear() == LocalDate.now().getYear()) {
-            Optional<Kehadiran> kehadiran = kehadiranRepo.findByNipAndStatusAndWaktuBetween(nip, status, todayStart, todayEnd);
+            Optional<Kehadiran> kehadiran = kehadiranRepo.findByPegawaiNipAndStatusAndTanggal(nip, status, tanggal.toString());
             if (kehadiran.isPresent()) {
                 return new KehadiranVO(kehadiran.get());
             }
         } else {
-            Optional<KehadiranArc> kehadiranArc = kehadiranArcRepo.findByNipAndStatusAndWaktuBetween(nip, status, todayStart, todayEnd);
+            Optional<KehadiranArc> kehadiranArc = kehadiranArcRepo.findByPegawaiNipAndStatusAndTanggal(nip, status, tanggal.toString());
             if (kehadiranArc.isPresent()) {
                 return new KehadiranVO(kehadiranArc.get());
             }
@@ -941,6 +1054,11 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
             case GlobalConstants.STATUS_PULANG -> LocalTime.of(17, 1, 1, 123000000);
             default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
         };
+        LocalTime jadwal = switch (request.getStatus()) {
+            case GlobalConstants.STATUS_DATANG -> LocalTime.of(8, 0, 0, 123000000);
+            case GlobalConstants.STATUS_PULANG -> LocalTime.of(14, 30, 0, 123000000);
+            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
+        };
         KehadiranVO kehadiranVO = new KehadiranVO();
         kehadiranVO.setIdPegawai(pegawaiProfilVO.getId());
         kehadiranVO.setNamaPegawai(pegawaiProfilVO.getNama());
@@ -951,6 +1069,9 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         kehadiranVO.setAddedDate(LocalDateTime.now());
         kehadiranVO.setAddedByNip(request.getCreatedBy());
         kehadiranVO.setAddedByNama(pegawaiSimpegVO.getNama());
+        DateTimeFormatter formatterJam = DateTimeFormatter.ofPattern("HH:mm");
+        kehadiranVO.setJam(time.format(formatterJam));
+        kehadiranVO.setJadwal(jadwal.format(formatterJam));
         try {
             if (tglHariIni.getYear() == request.getTanggal().getYear()) {
                 return new SaveResponse(kehadiranRepo.save(new Kehadiran(kehadiranVO)));

@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.*;
 import java.time.chrono.HijrahDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +65,7 @@ public class KehadiranRest {
 //		log.debug("getStatusSaatIni start " + System.currentTimeMillis());
         StatusSaatIniResponse status = new StatusSaatIniResponse();
         //TODO dev purpose only
-//		LocalDateTime now = LocalDateTime.of(LocalDate.of(2025, 10, 7), LocalTime.of(17, 15, 0));
+//		LocalDateTime now = LocalDateTime.of(LocalDate.of(2026, 1, 23), LocalTime.of(17, 15, 0));
         LocalDateTime now = LocalDateTime.now();
         boolean isRamadhan = hijriahService.isRamadhan(HijrahDate.now().get(ChronoField.YEAR), now.toLocalDate());
         status.setWaktu(now);
@@ -89,13 +90,13 @@ public class KehadiranRest {
             status = GlobalConstants.STATUS_LIBUR;
         } else {
             if(!nowTime.isBefore(jamMasukAwal) && nowTime.isBefore(jamMasukAkhir)) {	// absen datang
-                if (null != pemutihanService.findByTanggalAndStatus(now.toLocalDate(), GlobalConstants.STATUS_DATANG)) {
+                if (null != pemutihanService.findByDateStringAndStatus(now.toLocalDate(), GlobalConstants.STATUS_DATANG)) {
                     status = GlobalConstants.STATUS_PEMUTIHAN;
                 } else {
                     status = GlobalConstants.STATUS_DATANG;
                 }
             } else if(!nowTime.isBefore(jamPulangAwal) && nowTime.isBefore(jamPulangAkhir)) {	// absen pulang
-                if (null != pemutihanService.findByTanggalAndStatus(now.toLocalDate(), GlobalConstants.STATUS_PULANG)) {
+                if (null != pemutihanService.findByDateStringAndStatus(now.toLocalDate(), GlobalConstants.STATUS_PULANG)) {
                     status = GlobalConstants.STATUS_PEMUTIHAN;
                 } else {
                     status = GlobalConstants.STATUS_PULANG;
@@ -119,7 +120,7 @@ public class KehadiranRest {
 
         //TODO dev purpose only
 //		String nip = "198703222019031010";
-//		LocalDateTime now = LocalDateTime.of(LocalDate.of(2023, 9, 12), LocalTime.of(17, 15));
+//		LocalDateTime now = LocalDateTime.of(LocalDate.of(2026, 1, 23), LocalTime.of(17, 15));
         LocalDateTime now = LocalDateTime.now();
         var statusSaatIni = getStatusSaatIni();
         if (!(statusSaatIni.getStatus().equals(GlobalConstants.STATUS_DATANG) || statusSaatIni.getStatus().equals(GlobalConstants.STATUS_PULANG))) {
@@ -135,7 +136,7 @@ public class KehadiranRest {
             validasiIpPrivate(request.getRemoteAddr());
         }
         kehadiran.setPegawai(new Pegawai(pegawaiProfilVO.getId(), pegawaiProfilVO.getNama()));
-        KehadiranVO existingVO = kehadiranService.findByNipAndStatusAndTanggal(createRequest.getIdPegawai(), kehadiran.getStatus(), now.toLocalDate());
+        KehadiranVO existingVO = kehadiranService.findByPegawaiNipAndStatusAndTanggal(createRequest.getIdPegawai(), kehadiran.getStatus(), now.toLocalDate());
         if (null != existingVO.getId()) {
             if(kehadiran.getStatus().equals(GlobalConstants.STATUS_DATANG)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Anda sudah datang!");
@@ -154,19 +155,25 @@ public class KehadiranRest {
         LocalTime jamMasukAkhir = LocalTime.parse(jamKerja.getJamDatangEnd());
         LocalTime jamPulangAwal = LocalTime.parse(jamKerja.getJamPulangStart());
         LocalTime jamPulangAkhir = LocalTime.parse(jamKerja.getJamPulangEnd());
+        LocalTime jadwalDatang = LocalTime.parse(jamKerja.getJamDatangBatas());
+        LocalTime jadwalPulang = LocalTime.parse(jamKerja.getJamPulangBatas());
         LocalTime nowTime = now.toLocalTime();
         LocalDate today = now.toLocalDate();
         Kehadiran kehadiran = new Kehadiran();
         kehadiran.setWaktu(now);
+        DateTimeFormatter formatterJam = DateTimeFormatter.ofPattern("HH:mm");
+        kehadiran.setJam(nowTime.format(formatterJam));
 
         if(nowTime.isAfter(jamMasukAwal.minusSeconds(1)) && nowTime.isBefore(jamMasukAkhir.plusSeconds(1))) {
             kehadiran.setStatus(GlobalConstants.STATUS_DATANG);
+            kehadiran.setJadwal(jadwalDatang.format(formatterJam));
         }else if(nowTime.isAfter(jamPulangAwal.minusSeconds(1)) && nowTime.isBefore(jamPulangAkhir.plusSeconds(1))) {
             kehadiran.setStatus(GlobalConstants.STATUS_PULANG);
+            kehadiran.setJadwal(jadwalPulang.format(formatterJam));
         }else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Saat ini di luar jam absen!");
         }
-        kehadiran.setKurangMenit(kurangMenit(kehadiran.getStatus(), now.toLocalDate(), now.toLocalTime()));
+//        kehadiran.setKurangMenit(kurangMenit(kehadiran.getStatus(), now.toLocalDate(), now.toLocalTime()));
         if(null != longitude && null != latitude) {
             Location location = new Location();
             location.setType(GlobalConstants.LOCATION_TYPE_POINT);
@@ -181,22 +188,22 @@ public class KehadiranRest {
         return kehadiran;
     }
 
-    private int kurangMenit(String status, LocalDate tanggal, LocalTime jam) {
-        JamKerja jamKerja = jamKerjaService.findByHariAndIsRamadhan(tanggal.getDayOfWeek().getValue(),
-                hijriahService.isRamadhan(HijrahDate.from(tanggal).get(ChronoField.YEAR), tanggal));
-        LocalTime jamDatang = LocalTime.parse(jamKerja.getJamDatangBatas());
-        LocalTime jamPulang = LocalTime.parse(jamKerja.getJamPulangBatas());
-
-        int kurang;
-        long kurangLong;
-        if(GlobalConstants.STATUS_DATANG.equals(status)) {
-            kurangLong = Duration.between(jamDatang, LocalTime.of(jam.getHour(), jam.getMinute())).toMinutes();
-        } else {
-            kurangLong = Duration.between(LocalTime.of(jam.getHour(), jam.getMinute()), jamPulang).toMinutes();
-        }
-        kurang = Math.toIntExact(kurangLong);
-        return Math.max(kurang, 0);
-    }
+//    private int kurangMenit(String status, LocalDate tanggal, LocalTime jam) {
+//        JamKerja jamKerja = jamKerjaService.findByHariAndIsRamadhan(tanggal.getDayOfWeek().getValue(),
+//                hijriahService.isRamadhan(HijrahDate.from(tanggal).get(ChronoField.YEAR), tanggal));
+//        LocalTime jamDatang = LocalTime.parse(jamKerja.getJamDatangBatas());
+//        LocalTime jamPulang = LocalTime.parse(jamKerja.getJamPulangBatas());
+//
+//        int kurang;
+//        long kurangLong;
+//        if(GlobalConstants.STATUS_DATANG.equals(status)) {
+//            kurangLong = Duration.between(jamDatang, LocalTime.of(jam.getHour(), jam.getMinute())).toMinutes();
+//        } else {
+//            kurangLong = Duration.between(LocalTime.of(jam.getHour(), jam.getMinute()), jamPulang).toMinutes();
+//        }
+//        kurang = Math.toIntExact(kurangLong);
+//        return Math.max(kurang, 0);
+//    }
 
     private boolean isHarusDiKampus(PegawaiSimpegVO pegawaiProfilVO) {
         var now = LocalDate.now();

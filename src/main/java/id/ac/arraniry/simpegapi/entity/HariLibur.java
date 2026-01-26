@@ -13,6 +13,7 @@ public class HariLibur {
 	@Id
 	private String id;
 	private LocalDate tanggal;
+	private String dateString;
 
 	public HariLibur(LocalDate tanggal) {
 		this.tanggal = tanggal;

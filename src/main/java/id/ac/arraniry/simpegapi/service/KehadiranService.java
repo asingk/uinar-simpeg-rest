@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface KehadiranService {
-    KehadiranVO findByNipAndStatusAndTanggal(String nip, String status, LocalDate tanggal);
+    KehadiranVO findByPegawaiNipAndStatusAndTanggal(String nip, String status, LocalDate tanggal);
     SaveResponse save(KehadiranVO kehadiranVO);
     List<KehadiranVO> findByNipAndTanggal(String nip, LocalDate tanggal);
     KehadiranVO findById(String id);

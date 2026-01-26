@@ -12,5 +12,9 @@ import java.util.Optional;
 public interface IzinRepo extends MongoRepository<Izin, String> {
     @Query("{'nip' : ?0, 'tanggal' : { $gte : ?1, $lte : ?2 } }")
     List<Izin> findByNipAndTanggalBetween(String nip, LocalDate start, LocalDate end, Sort sort);
+
     Optional<Izin> findByNipAndTanggal(String nip, LocalDate tanggal);
+
+    @Query("{ 'nip': ?0, 'dateString': { $regex: ?1 } }")
+    List<Izin> findBulananByNip(String nip, String regexTanggal, Sort sort);
 }

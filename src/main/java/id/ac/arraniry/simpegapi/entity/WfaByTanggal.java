@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class WfaByTanggal {
     private String id;
     private LocalDate tanggal;
+    private String dateString;
 
     public WfaByTanggal(LocalDate tanggal) {
         this.tanggal = tanggal;

@@ -13,6 +13,7 @@ public class HariLiburTapiKerja {
 	@Id
 	private String id;
 	private LocalDate tanggal;
+	private String dateString;
 
 	public HariLiburTapiKerja(LocalDate tanggal) {
 		this.tanggal = tanggal;

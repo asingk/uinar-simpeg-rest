@@ -15,6 +15,7 @@ public class Pemutihan {
 	private String id;
 	private LocalDate tanggal;
 	private String status;
+	private String dateString;
 
 	public Pemutihan(PemutihanCreateRequest request) {
 		this.tanggal = request.getTanggal();

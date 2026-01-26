@@ -28,7 +28,9 @@ public class KehadiranVO {
 	private String addedByNip;
 	private String addedByNama;
 	private LocalDateTime addedDate;
-	private Integer kurangMenit;
+//	private Integer kurangMenit;
+	private String jam;
+	private String jadwal;
 
 	public KehadiranVO(KehadiranArc hadir) {
 		this.id = hadir.getId();
@@ -38,8 +40,10 @@ public class KehadiranVO {
 		this.namaPegawai = hadir.getPegawai().getNama();
 		this.isAdded = hadir.getIsAdded();
 		this.isDeleted = hadir.getIsDeleted();
-		this.kurangMenit = hadir.getKurangMenit();
+//		this.kurangMenit = hadir.getKurangMenit();
 		this.tanggal = hadir.getTanggal();
+		this.jam = hadir.getJam();
+		this.jadwal = hadir.getJadwal();
 	}
 
 	public KehadiranVO(Kehadiran hadir) {
@@ -50,7 +54,9 @@ public class KehadiranVO {
 		this.namaPegawai = hadir.getPegawai().getNama();
 		this.isAdded = hadir.getIsAdded();
 		this.isDeleted = hadir.getIsDeleted();
-		this.kurangMenit = hadir.getKurangMenit();
+//		this.kurangMenit = hadir.getKurangMenit();
 		this.tanggal = hadir.getTanggal();
+		this.jam = hadir.getJam();
+		this.jadwal = hadir.getJadwal();
 	}
 }

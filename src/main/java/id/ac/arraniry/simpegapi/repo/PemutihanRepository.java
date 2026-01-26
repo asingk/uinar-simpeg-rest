@@ -10,12 +10,17 @@ import java.util.List;
 
 public interface PemutihanRepository extends MongoRepository<Pemutihan, String> {
 	
-	@Query("{ 'tanggal' : { $gte : ?0, $lte : ?1 } }")
-	List<Pemutihan> findByTanggalBetween(LocalDate start, LocalDate end, Sort sort);
+//	@Query("{ 'tanggal' : { $gte : ?0, $lte : ?1 } }")
+//	List<Pemutihan> findByTanggalBetween(LocalDate start, LocalDate end, Sort sort);
 	
-	Pemutihan findByTanggalAndStatus(LocalDate tanggal, String status);
+//	Pemutihan findByTanggalAndStatus(LocalDate tanggal, String status);
+
+	Pemutihan findByDateStringAndStatus(String dateString, String status);
 	
 	@Query("{ 'tanggal' : { $gte : ?0, $lte : ?1 }, status: ?2 }")
 	List<Pemutihan> findByTanggalBetweenAndStatus(LocalDate start, LocalDate end, String status, Sort sort);
+
+	@Query("{ 'dateString': { $regex: ?0 } }")
+	List<Pemutihan> findBulanan(String regex, Sort sort);
 
 }

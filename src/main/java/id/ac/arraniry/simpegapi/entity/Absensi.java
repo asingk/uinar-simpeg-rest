@@ -28,7 +28,9 @@ public class Absensi {
 	private Boolean isAdded;
 	private Pegawai addedBy;
 	private LocalDateTime addedDate;
-	private Integer kurangMenit;
+//	private Integer kurangMenit;
+	private String jadwal;
+	private String jam;
 
 	public Absensi(KehadiranVO hadirVO) {
 		this.id = hadirVO.getId();
@@ -69,9 +71,11 @@ public class Absensi {
 				this.addedDate = hadirVO.getAddedDate();
 			}
 		}
-		if (null != hadirVO.getKurangMenit()) {
-			this.kurangMenit = hadirVO.getKurangMenit();
-		}
+//		if (null != hadirVO.getKurangMenit()) {
+//			this.kurangMenit = hadirVO.getKurangMenit();
+//		}
+		this.jam = hadirVO.getJam();
+		this.jadwal = hadirVO.getJadwal();
 	}
 
 }

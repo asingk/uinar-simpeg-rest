@@ -16,6 +16,7 @@ public class Izin {
     private String nama;
     private String izinCategoryId;
     private String izinCategoryDesc;
+    private String dateString;
 
     public Izin(String nip, LocalDate tanggal, KategoriIzin izinCategory, String nama) {
         this.nip = nip;

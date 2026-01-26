@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,10 +23,11 @@ public class IzinServiceImpl implements IzinService {
 
     @Override
     public List<Izin> findByNipAndTahunAndBulan(String idPegawai, Integer tahun, Integer bulan) {
-        LocalDate startDate = LocalDate.of(tahun, bulan, 1);
-        YearMonth yearMonth = YearMonth.of(tahun, bulan);
-        LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
-        return izinRepo.findByNipAndTanggalBetween(idPegawai, startDate, endDate, Sort.by(Sort.Direction.ASC, "tanggal"));
+//        LocalDate startDate = LocalDate.of(tahun, bulan, 1);
+//        YearMonth yearMonth = YearMonth.of(tahun, bulan);
+//        LocalDate endDate = LocalDate.of(tahun, bulan, yearMonth.lengthOfMonth());
+        String pattern = String.format("^%d-%02d-", tahun, bulan);
+        return izinRepo.findBulananByNip(idPegawai, pattern, Sort.by(Sort.Direction.ASC, "dateString"));
     }
 
     @Override

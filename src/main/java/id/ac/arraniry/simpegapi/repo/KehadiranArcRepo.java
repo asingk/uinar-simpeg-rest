@@ -12,8 +12,8 @@ import java.util.Optional;
 
 public interface KehadiranArcRepo extends MongoRepository<KehadiranArc, String> {
 
-    @Query("{ 'pegawai.nip' : ?0, 'waktu' : { $gte : ?1, $lte : ?2 } }")
-    List<KehadiranArc> findByNipAndTanggalBetween(String nip, LocalDateTime start, LocalDateTime end, Sort sort);
+//    @Query("{ 'pegawai.nip' : ?0, 'waktu' : { $gte : ?1, $lte : ?2 } }")
+//    List<KehadiranArc> findByNipAndTanggalBetween(String nip, LocalDateTime start, LocalDateTime end, Sort sort);
 
     List<KehadiranArc> findByPegawaiNipAndTanggal(String nip, String tanggal);
 
@@ -23,7 +23,12 @@ public interface KehadiranArcRepo extends MongoRepository<KehadiranArc, String> 
     @Query("{ 'pegawai.nip' : ?0, 'waktu' : { $gte : ?1, $lte : ?2 }, isDeleted: { $ne: true } }")
     List<KehadiranArc> findByNipAndTanggalBetweenAndIsDeletedFalse(String nip, LocalDateTime start, LocalDateTime end, Sort sort);
 
-    @Query("{ 'pegawai.nip' : ?0, 'status' : ?1, 'waktu' : { $gte : ?2, $lte : ?3 } }")
-    Optional<KehadiranArc> findByNipAndStatusAndWaktuBetween(String nip, String status, LocalDateTime start, LocalDateTime end);
+//    @Query("{ 'pegawai.nip' : ?0, 'status' : ?1, 'waktu' : { $gte : ?2, $lte : ?3 } }")
+//    Optional<KehadiranArc> findByNipAndStatusAndWaktuBetween(String nip, String status, LocalDateTime start, LocalDateTime end);
+
+    Optional<KehadiranArc> findByPegawaiNipAndStatusAndTanggal(String nip, String status, String tanggal);
+
+    @Query("{ 'pegawai.nip': ?0, 'tanggal': { $regex: ?1 } }")
+    List<KehadiranArc> findBulananByNip(String nip, String regexTanggal, Sort sort);
 
 }
