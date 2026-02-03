@@ -32,5 +32,6 @@ public class Izin {
         this.nama = usulIzin.getNama();
         this.izinCategoryId = usulIzin.getIzinCategoryId();
         this.izinCategoryDesc = usulIzin.getIzinCategoryDesc();
+        this.dateString = tanggal.toString();
     }
 }

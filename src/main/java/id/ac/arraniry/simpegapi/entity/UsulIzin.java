@@ -21,4 +21,6 @@ public class UsulIzin {
     private Pegawai updatedBy;
     private LocalDateTime createdDate;
     private String createdBy;
+    private String startDateStr;
+    private String endDateStr;
 }

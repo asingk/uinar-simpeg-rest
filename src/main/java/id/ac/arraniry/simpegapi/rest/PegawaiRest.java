@@ -108,6 +108,8 @@ public class PegawaiRest {
         usulIzin.setFileName(fileName);
         usulIzin.setCreatedBy(idPegawai);
         usulIzin.setCreatedDate(LocalDateTime.now());
+        usulIzin.setStartDateStr(startDate.toString());
+        usulIzin.setEndDateStr(endDate == null ? null : endDate.toString());
         return new CreateResponse(usulIzinService.save(usulIzin));
     }
 
