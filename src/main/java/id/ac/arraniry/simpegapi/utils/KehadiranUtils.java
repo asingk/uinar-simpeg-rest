@@ -21,9 +21,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.chrono.HijrahDate;
-import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,42 +31,12 @@ public class KehadiranUtils {
     private static final int SESSION_TIMEOUT = 10000;
     private static final int CHANNEL_TIMEOUT = 5000;
 
-    private final JamKerjaService jamKerjaService;
-    private final HijriahService hijriahService;
     private final Environment environment;
     private final KehadiranService kehadiranService;
 
-    public KehadiranUtils(JamKerjaService jamKerjaService,
-                          HijriahService hijriahService, Environment environment, KehadiranService kehadiranService) {
-        this.jamKerjaService = jamKerjaService;
-        this.hijriahService = hijriahService;
+    public KehadiranUtils(Environment environment, KehadiranService kehadiranService) {
         this.environment = environment;
         this.kehadiranService = kehadiranService;
-    }
-
-    public boolean getStatusLembur(LocalDateTime now) {
-
-//		log.debug("getStatusLembur start " + System.currentTimeMillis());
-        LocalTime nowTime = now.toLocalTime();
-        JamKerja jamKerja = jamKerjaService.findByHariAndIsRamadhan(now.getDayOfWeek().getValue(),
-                hijriahService.isRamadhan(HijrahDate.now().get(ChronoField.YEAR), now.toLocalDate()));
-        LocalTime jamLemburAwal = LocalTime.parse(jamKerja.getJamLemburStart());
-        LocalTime jamLemburAkhir = LocalTime.parse(jamKerja.getJamLemburEnd());
-        LocalTime jamMasukAwal = LocalTime.parse(jamKerja.getJamDatangStart());
-        LocalTime jamPulangAkhir = LocalTime.parse(jamKerja.getJamPulangEnd());
-        boolean isLembur = false;
-        // jam lembur hari libur
-        if(kehadiranService.isLibur(now.toLocalDate()) && nowTime.isAfter(jamMasukAwal.minusSeconds(1)) && nowTime.isBefore(jamPulangAkhir.plusSeconds(1))) {
-            isLembur = true;
-        }
-        // jam lembur hari kerja
-        else if(!kehadiranService.isLibur(now.toLocalDate()) && nowTime.isAfter(jamLemburAwal.minusSeconds(1)) && nowTime.isBefore(jamLemburAkhir.plusSeconds(1))) {
-            isLembur = true;
-        }
-
-//		log.debug("getStatusLembur stop " + System.currentTimeMillis());
-
-        return isLembur;
     }
 
     public void uploadFile(String filename, InputStream inputStream, String cdnSubfolder) {

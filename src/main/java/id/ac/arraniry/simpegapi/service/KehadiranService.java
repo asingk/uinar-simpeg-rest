@@ -1,8 +1,7 @@
 package id.ac.arraniry.simpegapi.service;
 
-import id.ac.arraniry.simpegapi.dto.KehadiranAddRequest;
-import id.ac.arraniry.simpegapi.dto.KehadiranVO;
-import id.ac.arraniry.simpegapi.dto.SaveResponse;
+import id.ac.arraniry.simpegapi.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,4 +14,6 @@ public interface KehadiranService {
     void delete(KehadiranVO kehadiranVO);
     SaveResponse add(KehadiranAddRequest request);
     Boolean isLibur(LocalDate tanggal);
+    StatusSaatIniResponse getStatusSaatIni();
+    SaveResponse create(HttpServletRequest request, String userAgent, KehadiranCreateRequest createRequest);
 }
