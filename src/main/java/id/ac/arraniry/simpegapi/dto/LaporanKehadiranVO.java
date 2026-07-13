@@ -10,8 +10,10 @@ public class LaporanKehadiranVO {
     private String hari;
     private String jadwalDatang; // Format "HH:mm"
     private String absenDatang;  // Format "HH:mm"
+    private String keteranganDatang;
     private String jadwalPulang; // Format "HH:mm"
     private String absenPulang;  // Format "HH:mm"
+    private String keteranganPulang;
     private Integer cepatTelatDatang; // Selisih dalam menit
     private Integer cepatTelatPulang; // Selisih dalam menit
     private String keterangan;

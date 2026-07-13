@@ -105,23 +105,28 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
             List<Pemutihan> tglPemutihan = pemutihanData.stream().filter(p -> LocalDate.parse(p.getDateString()).equals(date)).toList();
             boolean isPemutihan = false;
 
-            // Default Jadwal (Akan di-override jika pemutihan)
-            String jadwalDatang = (keterangan == null) ? "08:00" : null;
-            String jadwalPulang = (keterangan == null) ? (dayOfWeek == 5 ? "17:00" : "16:30") : null;
+            // Default Jadwal
+            JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(date.toString());
+            String jadwalDatang = (keterangan == null) ? jamKerjaHarian.getJadwalDatang() : null;
+            String jadwalPulang = (keterangan == null) ? jamKerjaHarian.getJadwalPulang() : null;
 
             String absenDatang = null;
             String absenPulang = null;
+            String keteranganDatang = null;
+            String keteranganPulang = null;
 
             if (!hasIzinOrCuti && !tglPemutihan.isEmpty()) {
                 for (Pemutihan p : tglPemutihan) {
                     if (GlobalConstants.STATUS_DATANG.equals(p.getStatus())) {
-                        jadwalDatang = "08:00";
-                        absenDatang = "08:00";
+//                        jadwalDatang = "08:00";
+                        absenDatang = jadwalDatang;
                         isPemutihan = true;
+                        keteranganDatang = "pemutihan";
                     } else if (GlobalConstants.STATUS_PULANG.equals(p.getStatus())) {
-                        jadwalPulang = (dayOfWeek == 5) ? "17:00" : "16:30";
+//                        jadwalPulang = (dayOfWeek == 5) ? "17:00" : "16:30";
                         absenPulang = jadwalPulang;
                         isPemutihan = true;
+                        keteranganPulang = "pemutihan";
                     }
                 }
             }
@@ -136,6 +141,13 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
                 if (datangEntry != null && datangEntry.getJadwal() != null) {
                     jadwalDatang = datangEntry.getJadwal();
                 }
+                if (datangEntry != null && null != datangEntry.getIsAdded() && datangEntry.getIsAdded()) {
+                    keteranganDatang = "ditambahkan";
+                }
+                if (datangEntry != null && null != datangEntry.getIsDeleted() && datangEntry.getIsDeleted()) {
+                    keterangan = "dihapus";
+                }
+
                 KehadiranVO pulangEntry = dayAbsen.stream()
                         .filter(a -> GlobalConstants.STATUS_PULANG.equals(a.getStatus()))
                         .reduce((first, second) -> second).orElse(null);
@@ -143,10 +155,16 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
                 if (pulangEntry != null && pulangEntry.getJadwal() != null) {
                     jadwalPulang = pulangEntry.getJadwal();
                 }
+                if (pulangEntry != null && null != pulangEntry.getIsAdded() && pulangEntry.getIsAdded()) {
+                    keteranganPulang = "ditambahkan";
+                }
+                if (pulangEntry != null && null != pulangEntry.getIsDeleted() && pulangEntry.getIsDeleted()) {
+                    keterangan = "dihapus";
+                }
             }
 
             // Update keterangan jika tidak ada absen dan bukan hari libur/izin
-            if (isPemutihan) {
+            if (isPemutihan || keteranganDatang != null || keteranganPulang != null) {
                 keterangan = null;
             } else if (keterangan == null && (absenDatang == null && absenPulang == null)) {
                 keterangan = "Tanpa Keterangan";
@@ -157,6 +175,8 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
             lapVO.setJadwalPulang(jadwalPulang);
             lapVO.setAbsenPulang(absenPulang);
             lapVO.setKeterangan(keterangan);
+            lapVO.setKeteranganDatang(keteranganDatang);
+            lapVO.setKeteranganPulang(keteranganPulang);
 
             // Hitung Cepat/Telat (Menit) - Logic sesuai query: jika pemutihan 0, jika absen null tapi jadwal ada, hitung selisih default (simulasi telat)
             lapVO.setCepatTelatDatang(calculateMinutesDiff(jadwalDatang, absenDatang, true, isPemutihan));
@@ -456,28 +476,29 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         }
         PegawaiSimpegVO pegawaiProfilVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getIdPegawai(), environment);
         PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy(), environment);
-        LocalTime time = switch (request.getStatus()) {
-            case GlobalConstants.STATUS_DATANG -> LocalTime.of(7, 15, 1, 123000000);
-            case GlobalConstants.STATUS_PULANG -> LocalTime.of(17, 1, 1, 123000000);
-            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
-        };
+        JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(request.getTanggal().toString());
+//        LocalTime time = switch (request.getStatus()) {
+//            case GlobalConstants.STATUS_DATANG -> LocalTime.parse(jamKerjaHarian.getJadwalDatang());
+//            case GlobalConstants.STATUS_PULANG -> LocalTime.parse(jamKerjaHarian.getJadwalPulang());
+//            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
+//        };
         LocalTime jadwal = switch (request.getStatus()) {
-            case GlobalConstants.STATUS_DATANG -> LocalTime.of(8, 0, 0, 123000000);
-            case GlobalConstants.STATUS_PULANG -> LocalTime.of(14, 30, 0, 123000000);
+            case GlobalConstants.STATUS_DATANG -> LocalTime.parse(jamKerjaHarian.getJadwalDatang());
+            case GlobalConstants.STATUS_PULANG -> LocalTime.parse(jamKerjaHarian.getJadwalPulang());
             default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
         };
         KehadiranVO kehadiranVO = new KehadiranVO();
         kehadiranVO.setIdPegawai(pegawaiProfilVO.getId());
         kehadiranVO.setNamaPegawai(pegawaiProfilVO.getNama());
         kehadiranVO.setStatus(request.getStatus());
-        kehadiranVO.setWaktu(LocalDateTime.of(request.getTanggal(), time));
+        kehadiranVO.setWaktu(LocalDateTime.of(request.getTanggal(), jadwal));
         kehadiranVO.setTanggal(request.getTanggal().toString());
         kehadiranVO.setIsAdded(true);
         kehadiranVO.setAddedDate(LocalDateTime.now());
         kehadiranVO.setAddedByNip(request.getCreatedBy());
         kehadiranVO.setAddedByNama(pegawaiSimpegVO.getNama());
         DateTimeFormatter formatterJam = DateTimeFormatter.ofPattern("HH:mm");
-        kehadiranVO.setJam(time.format(formatterJam));
+        kehadiranVO.setJam(jadwal.format(formatterJam));
         kehadiranVO.setJadwal(jadwal.format(formatterJam));
         try {
             if (tglHariIni.getYear() == request.getTanggal().getYear()) {
