@@ -17,6 +17,7 @@ public class HariLibur {
 
 	public HariLibur(LocalDate tanggal) {
 		this.tanggal = tanggal;
+		this.dateString = tanggal.toString();
 	}
 
 }
