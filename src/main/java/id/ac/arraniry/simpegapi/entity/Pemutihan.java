@@ -20,6 +20,7 @@ public class Pemutihan {
 	public Pemutihan(PemutihanCreateRequest request) {
 		this.tanggal = request.getTanggal();
 		this.status = request.getStatus();
+		this.dateString = request.getTanggal().toString();
 	}
 
 }
