@@ -21,6 +21,7 @@ import java.time.chrono.HijrahDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -280,7 +281,6 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         return generateUangMakanDataSourceFromBaru(kehadiranVOList).stream().peek(row -> {
             JabatanBulanan jabatanBulanan = jabatanBulananList.stream().filter(jabnul -> row.getNip().equals(jabnul.getNip())).findAny()
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "jabatan bulanan pegawai " + row.getNip() + " tidak ditemukan"));
-            assert jabatanBulanan != null;
             row.setGolongan(jabatanBulanan.getGolongan());
             row.setUnitGaji(jabatanBulanan.getUnitGaji());
             if (jabatanBulanan.getIdStatusPegawai().equals(GlobalConstants.ID_STATUS_PEGAWAI_PNS)
@@ -477,14 +477,15 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         PegawaiSimpegVO pegawaiProfilVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getIdPegawai(), environment);
         PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy(), environment);
         JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(request.getTanggal().toString());
-//        LocalTime time = switch (request.getStatus()) {
-//            case GlobalConstants.STATUS_DATANG -> LocalTime.parse(jamKerjaHarian.getJadwalDatang());
-//            case GlobalConstants.STATUS_PULANG -> LocalTime.parse(jamKerjaHarian.getJadwalPulang());
-//            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
-//        };
         LocalTime jadwal = switch (request.getStatus()) {
-            case GlobalConstants.STATUS_DATANG -> LocalTime.parse(jamKerjaHarian.getJadwalDatang());
-            case GlobalConstants.STATUS_PULANG -> LocalTime.parse(jamKerjaHarian.getJadwalPulang());
+            case GlobalConstants.STATUS_DATANG -> randomTimeBetween(
+                    LocalTime.parse(jamKerjaHarian.getDatangStart()),
+                    LocalTime.parse(jamKerjaHarian.getJadwalDatang())
+            );
+            case GlobalConstants.STATUS_PULANG -> randomTimeBetween(
+                    LocalTime.parse(jamKerjaHarian.getJadwalPulang()),
+                    LocalTime.parse(jamKerjaHarian.getPulangEnd())
+            );
             default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "status salah!");
         };
         KehadiranVO kehadiranVO = new KehadiranVO();
@@ -509,6 +510,20 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         } catch (DuplicateKeyException dke) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "rekaman sudah ada!");
         }
+    }
+
+    private LocalTime randomTimeBetween(LocalTime start, LocalTime end) {
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("start harus sebelum end: " + start + " - " + end);
+        }
+
+        long startSeconds = start.toSecondOfDay();
+        long endSeconds = end.toSecondOfDay();
+
+        long randomSeconds = ThreadLocalRandom.current()
+                .nextLong(startSeconds, endSeconds + 1); // +1 supaya end inklusif
+
+        return LocalTime.ofSecondOfDay(randomSeconds);
     }
 
     @Override
