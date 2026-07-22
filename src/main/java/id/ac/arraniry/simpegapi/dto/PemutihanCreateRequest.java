@@ -12,4 +12,6 @@ public class PemutihanCreateRequest {
     private LocalDate tanggal;
     @NotBlank
     private String status;
+    @NotBlank
+    private String createdBy;
 }

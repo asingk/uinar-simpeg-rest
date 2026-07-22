@@ -1,8 +1,11 @@
 package id.ac.arraniry.simpegapi.service;
 
+import id.ac.arraniry.simpegapi.dto.PegawaiSimpegVO;
 import id.ac.arraniry.simpegapi.dto.PemutihanCreateRequest;
 import id.ac.arraniry.simpegapi.entity.Pemutihan;
 import id.ac.arraniry.simpegapi.repo.PemutihanRepository;
+import id.ac.arraniry.simpegapi.utils.SimpegGraphUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -17,9 +20,11 @@ import java.util.List;
 public class PemutihanServiceImpl implements PemutihanService {
 
     private final PemutihanRepository pemutihanRepo;
+    private final Environment environment;
 
-    public PemutihanServiceImpl(PemutihanRepository pemutihanRepo) {
+    public PemutihanServiceImpl(PemutihanRepository pemutihanRepo, Environment environment) {
         this.pemutihanRepo = pemutihanRepo;
+        this.environment = environment;
     }
 
     @Override
@@ -46,8 +51,9 @@ public class PemutihanServiceImpl implements PemutihanService {
 
     @Override
     public String create(PemutihanCreateRequest request) {
+        PegawaiSimpegVO pegawaiSimpegVO = SimpegGraphUtils.getProfilPegawaiFromSimpegGraphql(request.getCreatedBy(), environment);
         try {
-            return pemutihanRepo.save(new Pemutihan(request)).getId();
+            return pemutihanRepo.save(new Pemutihan(request, pegawaiSimpegVO.getNama())).getId();
         } catch (DuplicateKeyException dke) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "tanggal sudah ada!");
         }
