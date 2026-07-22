@@ -39,6 +39,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
     private final HariLiburTapiKerjaService hariLiburTapiKerjaService;
     private final Environment environment;
     private final JamKerjaHarianService jamKerjaHarianService;
+    private final JamKerjaService jamKerjaService;
     private final HijriahService hijriahService;
     private final WfaByHariService wfaByHariService;
     private final WfaByTanggalService wfaByTanggalService;
@@ -46,7 +47,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
 
     public KehadiranServiceImpl(KehadiranRepo kehadiranRepo, KehadiranArcRepo kehadiranArcRepo, HariLiburService hariLiburService,
                                 PemutihanService pemutihanService, IzinService izinService, HariLiburTapiKerjaService hariLiburTapiKerjaService,
-                                Environment environment, JamKerjaHarianService jamKerjaHarianService,
+                                Environment environment, JamKerjaHarianService jamKerjaHarianService, JamKerjaService jamKerjaService,
                                 HijriahService hijriahService, WfaByHariService wfaByHariService, WfaByTanggalService wfaByTanggalService,
                                 JenisJabatanService jenisJabatanService) {
         this.kehadiranRepo = kehadiranRepo;
@@ -57,6 +58,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         this.hariLiburTapiKerjaService = hariLiburTapiKerjaService;
         this.environment = environment;
         this.jamKerjaHarianService = jamKerjaHarianService;
+        this.jamKerjaService = jamKerjaService;
         this.hijriahService = hijriahService;
         this.wfaByHariService = wfaByHariService;
         this.wfaByTanggalService = wfaByTanggalService;
@@ -139,9 +141,9 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
                         .filter(a -> GlobalConstants.STATUS_DATANG.equals(a.getStatus()))
                         .findFirst().orElse(null);
                 absenDatang = (datangEntry != null) ? datangEntry.getJam() : null;
-                if (datangEntry != null && datangEntry.getJadwal() != null) {
-                    jadwalDatang = datangEntry.getJadwal();
-                }
+//                if (datangEntry != null && datangEntry.getJadwal() != null) {
+//                    jadwalDatang = datangEntry.getJadwal();
+//                }
                 if (datangEntry != null && null != datangEntry.getIsAdded() && datangEntry.getIsAdded()) {
                     keteranganDatang = "ditambahkan";
                 }
@@ -153,9 +155,9 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
                         .filter(a -> GlobalConstants.STATUS_PULANG.equals(a.getStatus()))
                         .reduce((first, second) -> second).orElse(null);
                 absenPulang = (pulangEntry != null) ? pulangEntry.getJam() : null;
-                if (pulangEntry != null && pulangEntry.getJadwal() != null) {
-                    jadwalPulang = pulangEntry.getJadwal();
-                }
+//                if (pulangEntry != null && pulangEntry.getJadwal() != null) {
+//                    jadwalPulang = pulangEntry.getJadwal();
+//                }
                 if (pulangEntry != null && null != pulangEntry.getIsAdded() && pulangEntry.getIsAdded()) {
                     keteranganPulang = "ditambahkan";
                 }
@@ -500,7 +502,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         kehadiranVO.setAddedByNama(pegawaiSimpegVO.getNama());
         DateTimeFormatter formatterJam = DateTimeFormatter.ofPattern("HH:mm");
         kehadiranVO.setJam(jadwal.format(formatterJam));
-        kehadiranVO.setJadwal(jadwal.format(formatterJam));
+//        kehadiranVO.setJadwal(jadwal.format(formatterJam));
         try {
             if (tglHariIni.getYear() == request.getTanggal().getYear()) {
                 return new SaveResponse(kehadiranRepo.save(new Kehadiran(kehadiranVO)));
@@ -548,13 +550,13 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
     private Kehadiran paramToSave(LocalDateTime now, Double longitude, Double latitude, String userAgent, String statusJamKerja) {
 //        JamKerja jamKerja = jamKerjaService.findByHariAndIsRamadhan(now.getDayOfWeek().getValue(),
 //                hijriahService.isRamadhan(HijrahDate.now().get(ChronoField.YEAR), now.toLocalDate()));
-        JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(now.toLocalDate().toString());
+//        JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(now.toLocalDate().toString());
 //        LocalTime jamMasukAwal = LocalTime.parse(jamKerjaHarian.getDatangStart());
 //        LocalTime jamMasukAkhir = LocalTime.parse(jamKerjaHarian.getDatangEnd());
 //        LocalTime jamPulangAwal = LocalTime.parse(jamKerjaHarian.getPulangStart());
 //        LocalTime jamPulangAkhir = LocalTime.parse(jamKerjaHarian.getPulangEnd());
-        LocalTime jadwalDatang = LocalTime.parse(jamKerjaHarian.getJadwalDatang());
-        LocalTime jadwalPulang = LocalTime.parse(jamKerjaHarian.getJadwalPulang());
+//        LocalTime jadwalDatang = LocalTime.parse(jamKerjaHarian.getJadwalDatang());
+//        LocalTime jadwalPulang = LocalTime.parse(jamKerjaHarian.getJadwalPulang());
         LocalTime nowTime = now.toLocalTime();
         LocalDate today = now.toLocalDate();
         Kehadiran kehadiran = new Kehadiran();
@@ -563,14 +565,14 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         kehadiran.setJam(nowTime.format(formatterJam));
         kehadiran.setStatus(statusJamKerja);
 
-        if(GlobalConstants.STATUS_DATANG.equals(statusJamKerja)) {
-            kehadiran.setJadwal(jadwalDatang.format(formatterJam));
-        }else if(GlobalConstants.STATUS_PULANG.equals(statusJamKerja)) {
-            kehadiran.setStatus(GlobalConstants.STATUS_PULANG);
-            kehadiran.setJadwal(jadwalPulang.format(formatterJam));
-        }else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Saat ini di luar jam absen!");
-        }
+//        if(GlobalConstants.STATUS_DATANG.equals(statusJamKerja)) {
+//            kehadiran.setJadwal(jadwalDatang.format(formatterJam));
+//        }else if(GlobalConstants.STATUS_PULANG.equals(statusJamKerja)) {
+//            kehadiran.setStatus(GlobalConstants.STATUS_PULANG);
+//            kehadiran.setJadwal(jadwalPulang.format(formatterJam));
+//        }else {
+//            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Saat ini di luar jam absen!");
+//        }
         if(null != longitude && null != latitude) {
             Location location = new Location();
             location.setType(GlobalConstants.LOCATION_TYPE_POINT);
@@ -593,7 +595,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
 //        LocalDateTime now = LocalDateTime.of(LocalDate.of(2026, 2, 19), LocalTime.of(13, 0, 0));
         LocalDateTime now = LocalDateTime.now();
         status.setWaktu(now);
-        status.setStatus(statusJamKerja(now));
+        status.setStatus(statusJamKerja());
         status.setJamLembur(getStatusLembur(now));
         boolean isRamadhan = hijriahService.isRamadhan(HijrahDate.now().get(ChronoField.YEAR), now.toLocalDate());
         status.setRamadhan(isRamadhan);
@@ -611,7 +613,7 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
 //        LocalDateTime now = LocalDateTime.of(LocalDate.of(2026, 2, 19), LocalTime.of(13, 0, 0));
         LocalDateTime now = LocalDateTime.now();
 //        var statusSaatIni = getStatusSaatIni();
-        String statusJamKerja = statusJamKerja(now);
+        String statusJamKerja = statusJamKerja();
         if (!(statusJamKerja.equals(GlobalConstants.STATUS_DATANG) || statusJamKerja.equals(GlobalConstants.STATUS_PULANG))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, statusJamKerja);
         }
@@ -655,15 +657,37 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
         logger.trace("{} sukses menggukanan jaringan kampus", ip);
     }
 
-    private String statusJamKerja(LocalDateTime now) {
+    private String statusJamKerja() {
         String status;
-        JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(now.toLocalDate().toString());
-//        JamKerja jamKerja = jamKerjaService.findByHariAndIsRamadhan(now.getDayOfWeek().getValue(),
-//                isRamadhan);
-        LocalTime jamMasukAwal = LocalTime.parse(jamKerjaHarian.getDatangStart());
-        LocalTime jamMasukAkhir = LocalTime.parse(jamKerjaHarian.getDatangEnd());
-        LocalTime jamPulangAwal = LocalTime.parse(jamKerjaHarian.getPulangStart());
-        LocalTime jamPulangAkhir = LocalTime.parse(jamKerjaHarian.getPulangEnd());
+        LocalDateTime now = LocalDateTime.now();
+        LocalTime jamMasukAwal;
+        LocalTime jamMasukAkhir;
+        LocalTime jamPulangAwal;
+        LocalTime jamPulangAkhir;
+
+        try {
+            JamKerjaHarian jamKerjaHarian = jamKerjaHarianService.findByTanggal(now.toLocalDate().toString());
+            jamMasukAwal = LocalTime.parse(jamKerjaHarian.getDatangStart());
+            jamMasukAkhir = LocalTime.parse(jamKerjaHarian.getDatangEnd());
+            jamPulangAwal = LocalTime.parse(jamKerjaHarian.getPulangStart());
+            jamPulangAkhir = LocalTime.parse(jamKerjaHarian.getPulangEnd());
+
+        } catch (ResponseStatusException e) {
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                boolean isRamadhan = hijriahService.isRamadhan(HijrahDate.now().get(ChronoField.YEAR), now.toLocalDate());
+                JamKerja jamKerja = jamKerjaService.findByHariAndIsRamadhan(now.getDayOfWeek().getValue(), isRamadhan);
+
+                JamKerjaHarian jamKerjaHarian = new JamKerjaHarian(jamKerja, now.toLocalDate());
+                jamKerjaHarianService.create(jamKerjaHarian);
+
+                jamMasukAwal = LocalTime.parse(jamKerja.getJamDatangStart());
+                jamMasukAkhir = LocalTime.parse(jamKerja.getJamDatangEnd());
+                jamPulangAwal = LocalTime.parse(jamKerja.getJamPulangStart());
+                jamPulangAkhir = LocalTime.parse(jamKerja.getJamPulangEnd());
+            } else {
+                throw e;
+            }
+        }
         LocalTime nowTime = now.toLocalTime();
         if(isLibur(now.toLocalDate())) {
             status = GlobalConstants.STATUS_LIBUR;

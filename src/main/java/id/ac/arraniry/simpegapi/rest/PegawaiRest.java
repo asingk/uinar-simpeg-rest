@@ -69,7 +69,7 @@ public class PegawaiRest {
         return laporanService.findLaporanBulananByNip(idPegawai, bulan, tahun);
     }
 
-    @Operation(summary = "Melihat riwayat kehadiran bulanan pegawai")
+    @Operation(summary = "Melihat riwayat jabatan bulanan pegawai")
     @GetMapping("/{idPegawai}/riwayat-profil")
     public List<JabatanBulanan> getProfilRiwayat(@PathVariable String idPegawai, @RequestParam(required = false) Integer bulan,
                                                  @RequestParam("tahun") int tahun) {

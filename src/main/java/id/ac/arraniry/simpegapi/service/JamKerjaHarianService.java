@@ -4,4 +4,5 @@ import id.ac.arraniry.simpegapi.entity.JamKerjaHarian;
 
 public interface JamKerjaHarianService {
     JamKerjaHarian findByTanggal(String tanggal);
+    String create(JamKerjaHarian jamKerjaHarian);
 }
