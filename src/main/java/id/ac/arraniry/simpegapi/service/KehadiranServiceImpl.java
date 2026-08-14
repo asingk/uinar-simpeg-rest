@@ -134,8 +134,8 @@ public class KehadiranServiceImpl implements LaporanService, KehadiranService {
                 }
             }
 
-            // Jika bukan pemutihan, ambil dari data kehadiran asli
-            if (!isPemutihan && kehadiranMap.containsKey(date)) {
+            // Jika bukan pemutihan atau izin/cuti, ambil dari data kehadiran asli
+            if (!isPemutihan && !hasIzinOrCuti && kehadiranMap.containsKey(date)) {
                 List<KehadiranVO> dayAbsen = kehadiranMap.get(date);
                 KehadiranVO datangEntry = dayAbsen.stream()
                         .filter(a -> GlobalConstants.STATUS_DATANG.equals(a.getStatus()))
